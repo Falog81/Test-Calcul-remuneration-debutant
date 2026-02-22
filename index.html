@@ -81,15 +81,29 @@
     .topbar .left{ min-width:240px; }
     .topbar .right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
+    .tabs{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; border-bottom:2px solid var(--border); }
+    .tab{
+      appearance:none; border:none; background:transparent; color:var(--muted);
+      padding:10px 16px; border-radius:12px 12px 0 0; font-weight:700; cursor:pointer;
+      border-bottom:3px solid transparent; transition: all 180ms ease;
+    }
+    .tab:hover{ background: color-mix(in srgb, var(--card) 88%, transparent); }
+    .tab.active{ color:var(--text); border-bottom-color: rgba(110,231,255,.90); }
+
+    .tabContent{ display:none; }
+    .tabContent.active{ display:block; }
+
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
     label{ display:block; font-size:12px; color:var(--muted); margin:2px 0 6px; }
-    input[type="text"], input[type="date"], input[type="number"], select{
+    input[type="text"], input[type="date"], input[type="number"], select, textarea{
       width:100%; padding:10px 10px; border-radius:12px;
       border:1px solid var(--border);
       background: color-mix(in srgb, var(--card) 70%, var(--bg));
       color:var(--text);
       outline:none;
+      font-family:var(--sans);
     }
+    textarea{ min-height:80px; resize:vertical; font-size:13px; line-height:1.4; }
     input[type="text"]::placeholder{ color: color-mix(in srgb, var(--muted) 85%, transparent); }
     .field{ min-width:140px; flex:1; }
     .field.sm{ min-width:120px; flex:0 0 160px; }
@@ -211,6 +225,13 @@
     .toast.ok{ border-color: rgba(124,255,178,.22); }
     .toast.warn{ border-color: rgba(255,209,102,.22); }
     .toast.err{ border-color: rgba(255,107,107,.28); }
+
+    .exportText{
+      white-space:pre-wrap; font-family:var(--mono); font-size:11px;
+      background: color-mix(in srgb, var(--card) 88%, transparent);
+      border:1px solid var(--border); border-radius:12px; padding:12px;
+      max-height:400px; overflow:auto; line-height:1.4;
+    }
   </style>
 </head>
 <body>
@@ -223,219 +244,287 @@
     <div class="right">
       <div class="pill">Analyse: <strong id="pillDate">----</strong></div>
       <div class="field xs" style="min-width:170px;">
-        <label for="dateAnalyse">Date d’analyse</label>
+        <label for="dateAnalyse">Date d'analyse</label>
         <input id="dateAnalyse" type="date" />
       </div>
     </div>
   </div>
 
-  <div class="grid">
-    <section class="card span2" aria-labelledby="hAdd">
-      <h2 id="hAdd">1) Ajouter un contrat</h2>
-      <form id="addForm" autocomplete="off" novalidate>
+  <div class="tabs">
+    <button class="tab active" data-tab="ajout">➕ Ajout</button>
+    <button class="tab" data-tab="suiviSemaine">📅 Suivi Semaine</button>
+    <button class="tab" data-tab="suiviMois">📊 Suivi Mois</button>
+    <button class="tab" data-tab="graphiques">📈 Graphiques</button>
+    <button class="tab" data-tab="actions">⚙️ Actions</button>
+  </div>
+
+  <div id="tabAjout" class="tabContent active">
+    <div class="grid">
+      <section class="card span2" aria-labelledby="hAdd">
+        <h2 id="hAdd">Ajouter un contrat</h2>
+        <form id="addForm" autocomplete="off" novalidate>
+          <div class="row">
+            <div class="field sm">
+              <label for="fDate">Date *</label>
+              <input id="fDate" type="date" />
+            </div>
+            <div class="field">
+              <label for="fNom">Nom *</label>
+              <input id="fNom" type="text" placeholder="Ex: Dupont" maxlength="80" />
+            </div>
+            <div class="field sm">
+              <label for="fType">Type *</label>
+              <select id="fType">
+                <option value="PLEN_ELEC">PLEN_ELEC</option>
+                <option value="PLEN_GAZ">PLEN_GAZ</option>
+                <option value="PLEN_DUAL">PLEN_DUAL</option>
+                <option value="PRIMEO">PRIMEO</option>
+                <option value="IAG_SEUL">IAG_SEUL</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field" id="wrapReference">
+              <label for="fReference">Référence contrat</label>
+              <input id="fReference" type="text" placeholder="Ex: A-12345678" maxlength="30" />
+            </div>
+          </div>
+
+          <div class="row" id="rowCond">
+            <div class="field sm" id="wrapPuissance" style="display:none;">
+              <label for="fPuissance">Puissance *</label>
+              <select id="fPuissance"></select>
+            </div>
+
+            <div class="field sm" id="wrapConso" style="display:none;">
+              <label for="fConso">Consommation *</label>
+              <select id="fConso"></select>
+            </div>
+
+            <div class="field" id="wrapOptions" style="display:none; min-width:260px;">
+              <label>Options (PLEN_ELEC / PLEN_GAZ / PLEN_DUAL)</label>
+              <div class="checkline">
+                <label><input id="fAssistance" type="checkbox" /> Assistance AXA (+7€)</label>
+                <label><input id="fDigitalisation" type="checkbox" /> Digitalisation (+2€)</label>
+              </div>
+            </div>
+
+            <div class="field sm" id="wrapIAG" style="min-width:170px;">
+              <label for="fIAG">IAG</label>
+              <select id="fIAG">
+                <option value="false">Non</option>
+                <option value="true">Oui</option>
+              </select>
+            </div>
+
+            <div class="field sm" id="wrapIAGType" style="display:none; min-width:170px;">
+              <label for="fIAGType">Type IAG</label>
+              <select id="fIAGType">
+                <option value="PJI">PJI</option>
+                <option value="ELA">ELA</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btnbar">
+            <button type="submit">Ajouter</button>
+            <button type="button" class="btn-ghost" id="btnFillToday">Mettre la date d'analyse</button>
+          </div>
+
+          <div class="err" id="formErr" role="alert" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="hListDay">
+        <h2 id="hListDay">Contrats du jour (aujourd'hui)</h2>
+        <div class="list" id="listDay"></div>
+        <div class="note" id="listDayEmpty" style="display:none;">Aucun contrat aujourd'hui.</div>
+      </section>
+
+      <section class="card" aria-labelledby="hListAll">
+        <h2 id="hListAll">Contrats du jour demandé (tri ↓)</h2>
+        <div class="row" style="margin-bottom:8px;">
+          <div class="field" style="min-width:220px;">
+            <label for="filterName">Recherche (nom)</label>
+            <input id="filterName" type="text" placeholder="Ex: dupont" />
+          </div>
+        </div>
+        <div class="list" id="listAll"></div>
+        <div class="note" id="listAllEmpty" style="display:none;">Aucun contrat sur le jour demandé.</div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tabSuiviSemaine" class="tabContent">
+    <div class="grid">
+      <section class="card span2">
+        <h2>📅 Suivi Semaine</h2>
+        <div class="row" style="margin-bottom:12px;">
+          <div class="field sm" style="min-width:200px;">
+            <label for="weekStartDate">Date début semaine</label>
+            <input id="weekStartDate" type="date" />
+          </div>
+          <button id="btnCurrentWeek" style="align-self:flex-end;">Semaine actuelle</button>
+        </div>
+
+        <div class="hr"></div>
+        <h2 style="font-size:14px; margin-top:8px;">Compteurs détaillés</h2>
+        <div id="weekCounters" class="kpis" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));"></div>
+
+        <div class="hr"></div>
+        <h2 style="font-size:14px; margin-top:8px;">Résumé</h2>
+        <div id="weekSummary" class="kpis"></div>
+
+        <div class="hr"></div>
+        <h2 style="font-size:14px; margin-top:8px;">Export texte semaine</h2>
+        <div class="btnbar">
+          <button id="btnExportWeekText">Générer export texte</button>
+          <button id="btnCopyWeekText" style="display:none;">📋 Copier</button>
+        </div>
+        <div id="weekExportText" class="exportText" style="display:none; margin-top:10px;"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tabSuiviMois" class="tabContent">
+    <div class="grid">
+      <section class="card" aria-labelledby="hDay">
+        <h2 id="hDay">Résumé du jour</h2>
+        <div class="kpis" id="dayKPIs"></div>
+        <div class="hr"></div>
+        <div class="note" id="dayNote"></div>
+      </section>
+
+      <section class="card" aria-labelledby="hMonth">
+        <h2 id="hMonth">Résumé du mois</h2>
+        <div class="kpis" id="monthKPIs"></div>
+        <div class="hr"></div>
+        <div class="note" id="monthNote"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="tabGraphiques" class="tabContent">
+    <div class="grid">
+      <section class="card span2" aria-labelledby="hCharts">
+        <h2 id="hCharts">Graphiques</h2>
+
+        <div class="row" style="margin-bottom:8px;">
+          <div class="field sm" style="min-width:190px;">
+            <label for="chartView">Vue</label>
+            <select id="chartView">
+              <option value="day">Jour (par jour)</option>
+              <option value="month">Mois (par mois)</option>
+              <option value="year">Année (par année)</option>
+            </select>
+          </div>
+          <div class="field sm" style="min-width:150px;">
+            <label for="chartYear">Année</label>
+            <select id="chartYear"></select>
+          </div>
+          <div class="field sm" id="wrapChartMonth" style="min-width:180px;">
+            <label for="chartMonth">Mois</label>
+            <select id="chartMonth"></select>
+          </div>
+          <div class="field" style="min-width:220px;">
+            <label for="chartMetric">Détail</label>
+            <select id="chartMetric">
+              <option value="stack">Énergie + IAG (détail)</option>
+              <option value="total">Total seulement</option>
+              <option value="energy">Énergie seulement</option>
+              <option value="iag">IAG seulement</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="chartRow">
+          <div>
+            <div class="chartWrap">
+              <canvas id="contractsChart" aria-label="Graphique contrats" role="img"></canvas>
+            </div>
+            <div class="note" id="chartNote" style="margin-top:10px;"></div>
+          </div>
+
+          <div>
+            <div class="card" style="padding:12px;">
+              <div style="font-weight:900;margin-bottom:8px;">Répartition (mois analysé)</div>
+              <div class="chartSmall">
+                <canvas id="typeChart" aria-label="Répartition par type" role="img"></canvas>
+              </div>
+              <div class="note" id="typeChartNote" style="margin-top:10px;">Types du mois analysé.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="kpis" id="insightsKPIs"></div>
+
+        <div class="hr"></div>
         <div class="row">
-          <div class="field sm">
-            <label for="fDate">Date *</label>
-            <input id="fDate" type="date" />
+          <div class="field sm" style="min-width:220px;">
+            <label for="goalMonthly">Objectif mensuel (Total contrats)</label>
+            <input id="goalMonthly" type="number" min="0" step="1" placeholder="Ex: 120" />
           </div>
           <div class="field">
-            <label for="fNom">Nom *</label>
-            <input id="fNom" type="text" placeholder="Ex: Dupont" maxlength="80" />
-          </div>
-          <div class="field sm">
-            <label for="fType">Type *</label>
-            <select id="fType">
-              <option value="PLEN_ELEC">PLEN_ELEC</option>
-              <option value="PLEN_GAZ">PLEN_GAZ</option>
-              <option value="PLEN_DUAL">PLEN_DUAL</option>
-              <option value="PRIMEO">PRIMEO</option>
-              <option value="IAG_SEUL">IAG_SEUL</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row" id="rowCond">
-          <div class="field sm" id="wrapPuissance" style="display:none;">
-            <label for="fPuissance">Puissance *</label>
-            <select id="fPuissance"></select>
-          </div>
-
-          <div class="field sm" id="wrapConso" style="display:none;">
-            <label for="fConso">Consommation *</label>
-            <select id="fConso"></select>
-          </div>
-
-          <div class="field" id="wrapOptions" style="display:none; min-width:260px;">
-            <label>Options (PLEN_ELEC / PLEN_GAZ / PLEN_DUAL)</label>
-            <div class="checkline">
-              <label><input id="fAssistance" type="checkbox" /> Assistance AXA (+7€)</label>
-              <label><input id="fDigitalisation" type="checkbox" /> Digitalisation (+2€)</label>
+            <label>Progression (mois analysé)</label>
+            <div class="pill" style="width:100%; justify-content:space-between;">
+              <span id="goalProgressText">—</span>
+              <strong id="goalProgressPct">—</strong>
             </div>
           </div>
-
-          <div class="field sm" id="wrapIAG" style="min-width:170px;">
-            <label for="fIAG">IAG</label>
-            <select id="fIAG">
-              <option value="false">Non</option>
-              <option value="true">Oui</option>
-            </select>
-          </div>
         </div>
+      </section>
+    </div>
+  </div>
 
+  <div id="tabActions" class="tabContent">
+    <div class="grid">
+      <section class="card span2" aria-labelledby="hActions">
+        <h2 id="hActions">Actions</h2>
         <div class="btnbar">
-          <button type="submit">Ajouter</button>
-          <button type="button" class="btn-ghost" id="btnFillToday">Mettre la date d’analyse</button>
-        </div>
-
-        <div class="err" id="formErr" role="alert" aria-live="polite"></div>
-      </form>
-    </section>
-
-    <section class="card" aria-labelledby="hDay">
-      <h2 id="hDay">2) Résumé du jour</h2>
-      <div class="kpis" id="dayKPIs"></div>
-      <div class="hr"></div>
-      <div class="note" id="dayNote"></div>
-    </section>
-
-    <section class="card" aria-labelledby="hMonth">
-      <h2 id="hMonth">3) Résumé du mois</h2>
-      <div class="kpis" id="monthKPIs"></div>
-      <div class="hr"></div>
-      <div class="note" id="monthNote"></div>
-    </section>
-
-    <section class="card" aria-labelledby="hListDay">
-      <h2 id="hListDay">4) Contrats du jour (aujourd’hui)</h2>
-      <div class="list" id="listDay"></div>
-      <div class="note" id="listDayEmpty" style="display:none;">Aucun contrat aujourd’hui.</div>
-    </section>
-
-    <section class="card" aria-labelledby="hListAll">
-      <h2 id="hListAll">5) Contrats du jour demandé (tri ↓)</h2>
-      <div class="row" style="margin-bottom:8px;">
-        <div class="field" style="min-width:220px;">
-          <label for="filterName">Recherche (nom)</label>
-          <input id="filterName" type="text" placeholder="Ex: dupont" />
-        </div>
-      </div>
-      <div class="list" id="listAll"></div>
-      <div class="note" id="listAllEmpty" style="display:none;">Aucun contrat sur le jour demandé.</div>
-    </section>
-
-    <section class="card span2" aria-labelledby="hCharts">
-      <h2 id="hCharts">6) Graphiques</h2>
-
-      <div class="row" style="margin-bottom:8px;">
-        <div class="field sm" style="min-width:190px;">
-          <label for="chartView">Vue</label>
-          <select id="chartView">
-            <option value="day">Jour (par jour)</option>
-            <option value="month">Mois (par mois)</option>
-            <option value="year">Année (par année)</option>
-          </select>
-        </div>
-        <div class="field sm" style="min-width:150px;">
-          <label for="chartYear">Année</label>
-          <select id="chartYear"></select>
-        </div>
-        <div class="field sm" id="wrapChartMonth" style="min-width:180px;">
-          <label for="chartMonth">Mois</label>
-          <select id="chartMonth"></select>
-        </div>
-        <div class="field" style="min-width:220px;">
-          <label for="chartMetric">Détail</label>
-          <select id="chartMetric">
-            <option value="stack">Énergie + IAG (détail)</option>
-            <option value="total">Total seulement</option>
-            <option value="energy">Énergie seulement</option>
-            <option value="iag">IAG seulement</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="chartRow">
-        <div>
-          <div class="chartWrap">
-            <canvas id="contractsChart" aria-label="Graphique contrats" role="img"></canvas>
+          <button type="button" id="btnExport">Exporter (JSON)</button>
+          <button type="button" id="btnExportCsv">Exporter (CSV)</button>
+          <div class="field xs" style="min-width:190px; align-self:center;">
+            <label for="importMode">Import</label>
+            <select id="importMode">
+              <option value="merge">Fusionner</option>
+              <option value="replace">Remplacer</option>
+            </select>
           </div>
-          <div class="note" id="chartNote" style="margin-top:10px;"></div>
+          <button type="button" id="btnImport">Importer (JSON)</button>
+          <input id="importFile" type="file" accept="application/json" style="display:none" />
+          <button type="button" class="btn-danger" id="btnDeleteDay">Supprimer jour (date d'analyse)</button>
+          <button type="button" class="btn-danger" id="btnClearAll">Tout effacer</button>
         </div>
 
-        <div>
-          <div class="card" style="padding:12px;">
-            <div style="font-weight:900;margin-bottom:8px;">Répartition (mois analysé)</div>
-            <div class="chartSmall">
-              <canvas id="typeChart" aria-label="Répartition par type" role="img"></canvas>
+        <details style="margin-top:12px;">
+          <summary>Paramètres</summary>
+          <div class="row">
+            <div class="field sm" style="min-width:220px;">
+              <label for="themeSelect">Thème</label>
+              <select id="themeSelect">
+                <option value="auto">Auto (système)</option>
+                <option value="dark">Sombre</option>
+                <option value="light">Clair</option>
+              </select>
             </div>
-            <div class="note" id="typeChartNote" style="margin-top:10px;">Types du mois analysé.</div>
+            <div class="field sm" style="min-width:220px;">
+              <label for="csvSeparator">Séparateur CSV</label>
+              <select id="csvSeparator">
+                <option value=";">; (Excel FR)</option>
+                <option value=",">, (standard)</option>
+              </select>
+            </div>
           </div>
-        </div>
-      </div>
+          <div class="note">Le thème et le séparateur CSV sont mémorisés sur ce téléphone.</div>
+        </details>
 
-      <div class="hr"></div>
-      <div class="kpis" id="insightsKPIs"></div>
-
-      <div class="hr"></div>
-      <div class="row">
-        <div class="field sm" style="min-width:220px;">
-          <label for="goalMonthly">Objectif mensuel (Total contrats)</label>
-          <input id="goalMonthly" type="number" min="0" step="1" placeholder="Ex: 120" />
+        <div class="note" style="margin-top:10px;" id="actionsNote">
+          Conseil: exporte un backup JSON/CSV régulièrement et garde-le dans un cloud.
         </div>
-        <div class="field">
-          <label>Progression (mois analysé)</label>
-          <div class="pill" style="width:100%; justify-content:space-between;">
-            <span id="goalProgressText">—</span>
-            <strong id="goalProgressPct">—</strong>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card span2" aria-labelledby="hActions">
-      <h2 id="hActions">7) Actions</h2>
-      <div class="btnbar">
-        <button type="button" id="btnExport">Exporter (JSON)</button>
-        <button type="button" id="btnExportCsv">Exporter (CSV)</button>
-        <div class="field xs" style="min-width:190px; align-self:center;">
-          <label for="importMode">Import</label>
-          <select id="importMode">
-            <option value="merge">Fusionner</option>
-            <option value="replace">Remplacer</option>
-          </select>
-        </div>
-        <button type="button" id="btnImport">Importer (JSON)</button>
-        <input id="importFile" type="file" accept="application/json" style="display:none" />
-        <button type="button" class="btn-danger" id="btnDeleteDay">Supprimer jour (date d’analyse)</button>
-        <button type="button" class="btn-danger" id="btnClearAll">Tout effacer</button>
-      </div>
-
-      <details style="margin-top:12px;">
-        <summary>Paramètres</summary>
-        <div class="row">
-          <div class="field sm" style="min-width:220px;">
-            <label for="themeSelect">Thème</label>
-            <select id="themeSelect">
-              <option value="auto">Auto (système)</option>
-              <option value="dark">Sombre</option>
-              <option value="light">Clair</option>
-            </select>
-          </div>
-          <div class="field sm" style="min-width:220px;">
-            <label for="csvSeparator">Séparateur CSV</label>
-            <select id="csvSeparator">
-              <option value=";">; (Excel FR)</option>
-              <option value=",">, (standard)</option>
-            </select>
-          </div>
-        </div>
-        <div class="note">Le thème et le séparateur CSV sont mémorisés sur ce téléphone.</div>
-      </details>
-
-      <div class="note" style="margin-top:10px;" id="actionsNote">
-        Conseil: exporte un backup JSON/CSV régulièrement et garde-le dans un cloud.
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 </div>
 
@@ -455,7 +544,7 @@
   const KEY_THEME = 'remuneration_theme';
   const KEY_CSV_SEP = 'remuneration_csv_sep';
 
-  const EXPORT_FORMAT = 4;
+  const EXPORT_FORMAT = 5;
 
   const $ = (sel) => document.querySelector(sel);
 
@@ -469,15 +558,19 @@
   const fDate = $("#fDate");
   const fNom = $("#fNom");
   const fType = $("#fType");
+  const fReference = $("#fReference");
   const fPuissance = $("#fPuissance");
   const fConso = $("#fConso");
   const fAssistance = $("#fAssistance");
   const fDigitalisation = $("#fDigitalisation");
   const fIAG = $("#fIAG");
+  const fIAGType = $("#fIAGType");
 
+  const wrapReference = $("#wrapReference");
   const wrapPuissance = $("#wrapPuissance");
   const wrapConso = $("#wrapConso");
   const wrapOptions = $("#wrapOptions");
+  const wrapIAGType = $("#wrapIAGType");
 
   const btnFillToday = $("#btnFillToday");
 
@@ -502,6 +595,14 @@
   const importFile = $("#importFile");
   const importMode = $("#importMode");
 
+  const weekStartDate = $("#weekStartDate");
+  const btnCurrentWeek = $("#btnCurrentWeek");
+  const weekCounters = $("#weekCounters");
+  const weekSummary = $("#weekSummary");
+  const btnExportWeekText = $("#btnExportWeekText");
+  const btnCopyWeekText = $("#btnCopyWeekText");
+  const weekExportText = $("#weekExportText");
+
   const chartView = $("#chartView");
   const chartYear = $("#chartYear");
   const chartMonth = $("#chartMonth");
@@ -521,6 +622,21 @@
 
   const themeSelect = $("#themeSelect");
   const csvSeparator = $("#csvSeparator");
+
+  // Tabs
+  const tabs = document.querySelectorAll('.tab');
+  const tabContents = document.querySelectorAll('.tabContent');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.getAttribute('data-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(tc => tc.classList.remove('active'));
+      tab.classList.add('active');
+      const targetContent = document.getElementById('tab' + target.charAt(0).toUpperCase() + target.slice(1));
+      if(targetContent) targetContent.classList.add('active');
+    });
+  });
 
   // Toasts
   const toastHost = $("#toastHost");
@@ -639,6 +755,13 @@
   function clampText(s){ s = (s == null ? "" : String(s)); return s.trim().slice(0, 80); }
   function uid(){ return String(Date.now()) + "_" + Math.random().toString(16).slice(2); }
 
+  function getMonday(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+  }
+
   const TYPES = ["PLEN_ELEC","PLEN_GAZ","PLEN_DUAL","PRIMEO","IAG_SEUL"];
   const PUISSANCE_ELEC_DUAL = ["3","6-9","12"];
   const PUISSANCE_PRIMEO = ["6","9","12"];
@@ -703,10 +826,12 @@
     e.date = String(e.date || "");
     e.nom = clampText(e.nom);
     e.type = String(e.type || "PLEN_ELEC");
+    e.reference = clampText(e.reference || "");
     e.puissance = (e.puissance == null ? null : String(e.puissance));
     e.consommation = (e.consommation == null ? null : String(e.consommation));
     e.assistance = !!e.assistance;
     e.digitalisation = !!e.digitalisation;
+    e.iagType = String(e.iagType || "PJI");
 
     if(e.type === "IAG_SEUL"){
       e.iag = true;
@@ -773,6 +898,7 @@
   function formatDetails(e){
     const parts = [];
     parts.push("Date: " + e.date);
+    if(e.reference) parts.push("Ref: " + e.reference);
     parts.push("Type: " + e.type);
 
     if(e.type === "PLEN_ELEC"){
@@ -794,7 +920,7 @@
       parts.push("IAG: forcé");
     }
 
-    parts.push("IAG: " + (e.iag ? "Oui" : "Non"));
+    parts.push("IAG: " + (e.iag ? "Oui (" + e.iagType + ")" : "Non"));
     return parts.join(" • ");
   }
 
@@ -803,12 +929,21 @@
     wrapPuissance.style.display = "none";
     wrapConso.style.display = "none";
     wrapOptions.style.display = "none";
+    wrapIAGType.style.display = "none";
 
     const optionsAllowed = (t === "PLEN_ELEC" || t === "PLEN_GAZ" || t === "PLEN_DUAL");
     if(!optionsAllowed){ fAssistance.checked = false; fDigitalisation.checked = false; }
 
-    if(t === "IAG_SEUL"){ fIAG.value = "true"; fIAG.disabled = true; }
-    else { fIAG.disabled = false; }
+    if(t === "IAG_SEUL"){ 
+      fIAG.value = "true"; 
+      fIAG.disabled = true;
+      wrapIAGType.style.display = "";
+    }
+    else { 
+      fIAG.disabled = false;
+    }
+
+    updateReferenceExample();
 
     function setOptions(selectEl, values){
       selectEl.innerHTML = "";
@@ -845,6 +980,29 @@
       fConso.innerHTML = "";
       fAssistance.checked = false;
       fDigitalisation.checked = false;
+    }
+  }
+
+  function updateReferenceExample(){
+    const t = fType.value;
+    const label = wrapReference.querySelector('label');
+    if(t === "PLEN_ELEC" || t === "PLEN_GAZ" || t === "PLEN_DUAL"){
+      label.textContent = "Référence contrat (Ex: A-12345678)";
+      fReference.placeholder = "A-12345678";
+    }else if(t === "PRIMEO"){
+      label.textContent = "Référence contrat (Ex: VTCO123456)";
+      fReference.placeholder = "VTCO123456";
+    }else if(t === "IAG_SEUL"){
+      label.textContent = "Référence contrat (Ex: 406123456)";
+      fReference.placeholder = "406123456";
+    }
+  }
+
+  function updateIAGTypeVisibility(){
+    if(fIAG.value === "true" && fType.value !== "IAG_SEUL"){
+      wrapIAGType.style.display = "";
+    }else{
+      wrapIAGType.style.display = "none";
     }
   }
 
@@ -891,7 +1049,7 @@
 
     const tagIag = document.createElement("div");
     tagIag.className = "tag iag";
-    tagIag.textContent = e.iag ? "IAG: Oui" : "IAG: Non";
+    tagIag.textContent = e.iag ? ("IAG: Oui (" + e.iagType + ")") : "IAG: Non";
 
     const amount = amountForContract(e);
     const amt = document.createElement("div");
@@ -925,7 +1083,7 @@
     const today = todayStr();
     const asked = dateAnalyse.value;
 
-    listDayEmpty.textContent = "Aucun contrat aujourd’hui (" + today + ").";
+    listDayEmpty.textContent = "Aucun contrat aujourd'hui (" + today + ").";
     listAllEmpty.textContent = "Aucun contrat sur " + asked + ".";
 
     listDay.innerHTML = "";
@@ -944,6 +1102,201 @@
 
   function energyCount(e){ return e && e.type && e.type !== 'IAG_SEUL' ? 1 : 0; }
   function iagCount(e){ return e && e.iag ? 1 : 0; }
+
+  function computeWeekStats(startDate){
+    const monday = getMonday(new Date(startDate));
+    const weekDates = [];
+    for(let i=0; i<7; i++){
+      const d = new Date(monday);
+      d.setDate(d.getDate() + i);
+      weekDates.push(d.toISOString().slice(0,10));
+    }
+
+    const weekEntries = entries.filter(e => weekDates.includes(e.date));
+
+    const counters = {
+      dual36: 0, dual66: 0, dual6p6: 0, dual6p13: 0,
+      elec3: 0, elec6: 0, elec9: 0, elec12: 0,
+      primeo6: 0, primeo9: 0, primeo12: 0,
+      pji: 0, ela: 0
+    };
+
+    const plenElecList = [];
+    const plenDualList = [];
+    const primeoList = [];
+    const pjiList = [];
+    const elaList = [];
+
+    weekEntries.forEach(e => {
+      const t = e.type;
+      const p = e.puissance;
+      const c = e.consommation;
+
+      if(t === "PLEN_ELEC"){
+        if(p === "3") counters.elec3++;
+        else if(p === "6-9") counters.elec6++;
+        else if(p === "12") counters.elec12++;
+        plenElecList.push(e);
+      }else if(t === "PLEN_GAZ"){
+        // Gaz non compté dans compteurs Elec
+      }else if(t === "PLEN_DUAL"){
+        if(p === "3" && c === "1-6") counters.dual36++;
+        else if(p === "6-9" && c === "6-13") counters.dual66++;
+        else if(p === "6-9" && (c === "1-6" || c === "13")) counters.dual6p6++;
+        else if(p === "12" && c === "6-13") counters.dual6p13++;
+        plenDualList.push(e);
+      }else if(t === "PRIMEO"){
+        if(p === "6"){ counters.elec6++; counters.primeo6++; }
+        else if(p === "9"){ counters.elec9++; counters.primeo9++; }
+        else if(p === "12"){ counters.elec12++; counters.primeo12++; }
+        primeoList.push(e);
+      }
+
+      if(e.iag){
+        if(e.iagType === "PJI"){ counters.pji++; pjiList.push(e); }
+        else{ counters.ela++; elaList.push(e); }
+      }
+    });
+
+    const totalPlenitude = plenElecList.length + plenDualList.length;
+    const totalPrimeo = primeoList.length;
+    const totalIAG = counters.pji + counters.ela;
+
+    return {
+      weekDates,
+      weekEntries,
+      counters,
+      plenElecList,
+      plenDualList,
+      primeoList,
+      pjiList,
+      elaList,
+      totalPlenitude,
+      totalPrimeo,
+      totalIAG
+    };
+  }
+
+  function renderWeekStats(){
+    const startDate = weekStartDate.value;
+    if(!startDate){ toast('Sélectionne une date de début de semaine.', 'warn'); return; }
+
+    const stats = computeWeekStats(startDate);
+
+    weekCounters.innerHTML = '';
+    weekCounters.appendChild(kpi('Dual 3-6', String(stats.counters.dual36)));
+    weekCounters.appendChild(kpi('Dual 6-6', String(stats.counters.dual66)));
+    weekCounters.appendChild(kpi('Dual 6+6', String(stats.counters.dual6p6)));
+    weekCounters.appendChild(kpi('Dual 6+13', String(stats.counters.dual6p13)));
+    weekCounters.appendChild(kpi('Elec 3', String(stats.counters.elec3)));
+    weekCounters.appendChild(kpi('Elec 6', String(stats.counters.elec6)));
+    weekCounters.appendChild(kpi('Elec 9', String(stats.counters.elec9)));
+    weekCounters.appendChild(kpi('Elec 12', String(stats.counters.elec12)));
+    weekCounters.appendChild(kpi('Primeo 6', String(stats.counters.primeo6)));
+    weekCounters.appendChild(kpi('Primeo 9', String(stats.counters.primeo9)));
+    weekCounters.appendChild(kpi('Primeo 12', String(stats.counters.primeo12)));
+    weekCounters.appendChild(kpi('PJI', String(stats.counters.pji)));
+    weekCounters.appendChild(kpi('ELA', String(stats.counters.ela)));
+
+    weekSummary.innerHTML = '';
+    weekSummary.appendChild(kpi('Plénitude', String(stats.totalPlenitude)));
+    weekSummary.appendChild(kpi('Primeo', String(stats.totalPrimeo)));
+    weekSummary.appendChild(kpi('IAG Total', String(stats.totalIAG), 'PJI: ' + stats.counters.pji + ' • ELA: ' + stats.counters.ela));
+    weekSummary.appendChild(kpi('Total semaine', String(stats.weekEntries.length)));
+  }
+
+  function generateWeekTextExport(){
+    const startDate = weekStartDate.value;
+    if(!startDate){ toast('Sélectionne une date de début de semaine.', 'warn'); return; }
+
+    const stats = computeWeekStats(startDate);
+    const monday = getMonday(new Date(startDate));
+    const weekNum = getWeekNumber(monday);
+
+    let text = `Production semaine ${weekNum}\n\n`;
+
+    text += `Dual 3-6 : ${stats.counters.dual36}\n`;
+    text += `Dual 6-6 : ${stats.counters.dual66}\n`;
+    text += `Dual 6+6 : ${stats.counters.dual6p6}\n`;
+    text += `Dual 6+13 : ${stats.counters.dual6p13}\n\n`;
+
+    text += `Elec 3 : ${stats.counters.elec3}\n`;
+    text += `Elec 6 : ${stats.counters.elec6}\n`;
+    text += `Elec 9 : ${stats.counters.elec9}\n`;
+    text += `Elec 12 : ${stats.counters.elec12}\n\n`;
+
+    text += `Primeo\nElec 6/9 : ${stats.counters.primeo6 + stats.counters.primeo9}\n`;
+    text += `IAG : ${stats.totalIAG}\n\n`;
+
+    text += `Objectif : \nTotal : \nArgent : \n\n`;
+
+    text += `Plenitude\n`;
+    const plenSorted = [...stats.plenElecList, ...stats.plenDualList].sort((a,b) => {
+      const order = ['3', '6-9', '12'];
+      const aOrder = order.indexOf(a.puissance);
+      const bOrder = order.indexOf(b.puissance);
+      return aOrder - bOrder;
+    });
+    plenSorted.forEach(e => {
+      const typeName = formatContractType(e);
+      const ref = e.reference || 'A-XXXXXXXX';
+      text += `${typeName} ( ${e.nom.toUpperCase()} ) ${ref}\n`;
+    });
+
+    text += `\nPrimeo\n`;
+    const primeoSorted = stats.primeoList.sort((a,b) => {
+      const order = ['6', '9', '12'];
+      return order.indexOf(a.puissance) - order.indexOf(b.puissance);
+    });
+    primeoSorted.forEach(e => {
+      const typeName = `Elec ${e.puissance}`;
+      const ref = e.reference || 'VTCOXXXXXXXX';
+      text += `${typeName} ( ${e.nom.toUpperCase()} ) ${ref}\n`;
+    });
+
+    text += `\nPJI ( ${stats.counters.pji} )\n`;
+    stats.pjiList.forEach(e => {
+      const ref = e.reference || '406XXXX';
+      text += `PJI ( ${ref}, ${e.nom.toUpperCase()} )\n`;
+    });
+
+    text += `\nELA ( ${stats.counters.ela} )\n`;
+    stats.elaList.forEach(e => {
+      const ref = e.reference || '406XXXX';
+      text += `ELA ( ${ref}, ${e.nom.toUpperCase()} )\n`;
+    });
+
+    weekExportText.textContent = text;
+    weekExportText.style.display = '';
+    btnCopyWeekText.style.display = '';
+    toast('Export texte généré.', 'ok');
+  }
+
+  function formatContractType(e){
+    const t = e.type;
+    const p = e.puissance;
+    const c = e.consommation;
+
+    if(t === "PLEN_ELEC"){
+      if(p === "3") return "Elec 3";
+      if(p === "6-9") return "Elec 6";
+      if(p === "12") return "Elec 12";
+    }else if(t === "PLEN_DUAL"){
+      if(p === "3" && c === "1-6") return "Dual 3-6";
+      if(p === "6-9" && c === "6-13") return "Dual 6-6";
+      if(p === "6-9" && c === "1-6") return "Dual 6+6";
+      if(p === "12" && c === "6-13") return "Dual 6+13";
+    }
+    return t;
+  }
+
+  function getWeekNumber(d) {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return weekNo;
+  }
 
   function safeFilename(prefix, ext){
     const d = new Date();
@@ -982,25 +1335,26 @@
 
   function csvCell(v, sep){
     const s = (v == null) ? '' : String(v);
-    if(/["\n\r]/.test(s) || s.includes(sep)) return '"' + s.replace(/"/g,'""') + '"';
+    if(/["\\n\\r]/.test(s) || s.includes(sep)) return '"' + s.replace(/"/g,'""') + '"';
     return s;
   }
 
   function exportCSV(){
     const sep = getCsvSep();
-    const header = ['id','date','nom','type','puissance','consommation','assistance','digitalisation','iag','montant_eur'];
+    const header = ['id','date','nom','type','reference','puissance','consommation','assistance','digitalisation','iag','iagType','montant_eur'];
     const rows = [header.map(v=>csvCell(v, sep)).join(sep)];
     for(const e of entries){
       rows.push([
-        e.id, e.date, e.nom, e.type,
+        e.id, e.date, e.nom, e.type, e.reference || '',
         e.puissance ?? '', e.consommation ?? '',
         e.assistance ? '1':'0',
         e.digitalisation ? '1':'0',
         e.iag ? '1':'0',
+        e.iagType || 'PJI',
         (amountForContract(e) || 0).toFixed(2)
       ].map(v=>csvCell(v, sep)).join(sep));
     }
-    const csv = rows.join('\n');
+    const csv = rows.join('\\n');
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
     downloadBlob(safeFilename('remuneration-debutant-export', 'csv'), blob);
     markBackupNow();
@@ -1027,7 +1381,7 @@
     const imported = importedRaw.map(normalizeEntry);
 
     if(mode === 'replace'){
-      if(!window.confirm('Importer en mode Remplacer ?\n\nCela écrase tous les contrats actuels.')) return;
+      if(!window.confirm('Importer en mode Remplacer ?\\n\\nCela écrase tous les contrats actuels.')) return;
       entries = imported.slice();
     }else{
       entries = mergeById(entries, imported);
@@ -1409,48 +1763,7 @@
     renderInsightsAndGoal(m);
     renderChart();
     renderTypeChart(m.monthEntries);
-  }
-
-  // Insights UI
-  function renderInsightsAndGoal(m){
-    insightsKPIs.innerHTML = '';
-    const ins = buildInsights();
-    insightsKPIs.appendChild(kpi('Meilleur jour', String(ins.bestDay.total), ins.bestDay.k));
-    insightsKPIs.appendChild(kpi('Meilleur mois', String(ins.bestMonth.total), ins.bestMonth.k));
-    insightsKPIs.appendChild(kpi('Meilleure année', String(ins.bestYear.total), ins.bestYear.k));
-
-    const tt = topTypeForMonth(m.monthEntries);
-    insightsKPIs.appendChild(kpi('Top type (mois)', tt.type, tt.n ? (tt.n + ' occurrence(s)') : '—'));
-
-    const end = dateAnalyse.value;
-    const t7 = countTotalInRange(end, 7);
-    const dPrevEnd = new Date(end + 'T00:00:00');
-    dPrevEnd.setDate(dPrevEnd.getDate() - 7);
-    const endPrevStr = dPrevEnd.toISOString().slice(0,10);
-    const t7prev = countTotalInRange(endPrevStr, 7);
-    const delta = t7 - t7prev;
-
-    insightsKPIs.appendChild(kpi('Total 7 jours', String(t7), end));
-    insightsKPIs.appendChild(kpi('7 jours précédents', String(t7prev), endPrevStr));
-    insightsKPIs.appendChild(kpi('Δ (7j)', (delta >= 0 ? '+' : '') + String(delta)));
-
-    const yyyy = Number(m.monthStr.slice(0,4));
-    const mm = Number(m.monthStr.slice(5,7));
-    const dim = daysInMonth(yyyy, mm);
-    const dayNum = Number(m.dayStr.slice(8,10));
-    const pace = (dayNum > 0) ? (m.totalContratsMois / dayNum) : 0;
-    const proj = Math.round(pace * dim);
-    insightsKPIs.appendChild(kpi('Projection fin de mois', String(proj), 'Selon le rythme actuel'));
-
-    const goal = Number(goalMonthly.value);
-    if(!Number.isFinite(goal) || goal <= 0){
-      goalProgressText.textContent = `Mois ${m.monthStr}: ${m.totalContratsMois} / —`;
-      goalProgressPct.textContent = '—';
-      return;
-    }
-    const pct = Math.min(999, (m.totalContratsMois / goal) * 100);
-    goalProgressText.textContent = `Mois ${m.monthStr}: ${m.totalContratsMois} / ${goal}`;
-    goalProgressPct.textContent = pct.toFixed(1).replace('.', ',') + ' %';
+    renderWeekStats();
   }
 
   // State
@@ -1463,8 +1776,8 @@
     const t = todayStr();
     dateAnalyse.value = t;
     fDate.value = t;
+    weekStartDate.value = getMonday(new Date()).toISOString().slice(0,10);
 
-    // Load settings
     try{
       const th = localStorage.getItem(KEY_THEME) || 'auto';
       themeSelect.value = (th === 'dark' || th === 'light' || th === 'auto') ? th : 'auto';
@@ -1496,6 +1809,24 @@
   dateAnalyse.addEventListener('change', function(){ render(); });
   btnFillToday.addEventListener('click', function(){ fDate.value = dateAnalyse.value; fDate.focus(); });
   fType.addEventListener('change', function(){ updateConditionalFields(); });
+  fIAG.addEventListener('change', function(){ updateIAGTypeVisibility(); });
+
+  btnCurrentWeek.addEventListener('click', function(){
+    weekStartDate.value = getMonday(new Date()).toISOString().slice(0,10);
+    renderWeekStats();
+  });
+
+  btnExportWeekText.addEventListener('click', generateWeekTextExport);
+  btnCopyWeekText.addEventListener('click', function(){
+    const text = weekExportText.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      toast('Export copié dans le presse-papier.', 'ok');
+    }).catch(() => {
+      toast('Erreur lors de la copie.', 'err');
+    });
+  });
+
+  weekStartDate.addEventListener('change', function(){ renderWeekStats(); });
 
   chartView.addEventListener('change', function(){ renderChart(); });
   chartYear.addEventListener('change', function(){ renderChart(); });
@@ -1538,6 +1869,7 @@
     const date = String(fDate.value || '').trim();
     const nom = clampText(fNom.value);
     const type = String(fType.value || '').trim();
+    const reference = clampText(fReference.value);
 
     if(!date){ showErr('La date est obligatoire.'); return; }
     if(!nom){ showErr('Le nom est obligatoire.'); return; }
@@ -1570,13 +1902,28 @@
     let iag = (String(fIAG.value) === 'true');
     if(type === 'IAG_SEUL') iag = true;
 
-    const entry = normalizeEntry({ id: uid(), date, nom, type, puissance, consommation, assistance, digitalisation, iag });
+    const iagType = (iag ? String(fIAGType.value || 'PJI') : 'PJI');
+
+    const entry = normalizeEntry({ 
+      id: uid(), 
+      date, 
+      nom, 
+      type, 
+      reference,
+      puissance, 
+      consommation, 
+      assistance, 
+      digitalisation, 
+      iag,
+      iagType
+    });
 
     entries.push(entry);
     entries.sort(sortDesc);
     await idbAdd(entry);
 
     fNom.value = '';
+    fReference.value = '';
     fIAG.value = (entry.type === 'IAG_SEUL') ? 'true' : 'false';
     fAssistance.checked = false;
     fDigitalisation.checked = false;
@@ -1596,7 +1943,7 @@
 
     const e = entries.find(x => x.id === id);
     const label = e ? (e.nom + ' • ' + e.date + ' • ' + e.type) : id;
-    if(!window.confirm('Supprimer ce contrat ?\n\n' + label)) return;
+    if(!window.confirm('Supprimer ce contrat ?\\n\\n' + label)) return;
 
     entries = entries.filter(x => x.id !== id);
     idbDelete(id).catch(()=>{});
@@ -1610,7 +1957,7 @@
     const d = dateAnalyse.value;
     const n = entries.filter(e => e.date === d).length;
     if(n === 0){ toast('Aucun contrat à supprimer sur ' + d + '.', 'info', 2200); return; }
-    if(!window.confirm('Supprimer TOUS les contrats du ' + d + ' ?\n\nNombre: ' + n)) return;
+    if(!window.confirm('Supprimer TOUS les contrats du ' + d + ' ?\\n\\nNombre: ' + n)) return;
     entries = entries.filter(e => e.date !== d);
     await idbSetAll(entries);
     render();
@@ -1619,7 +1966,7 @@
 
   btnClearAll.addEventListener('click', async function(){
     if(entries.length === 0){ toast('Aucun contrat à effacer.', 'info', 2200); return; }
-    if(!window.confirm('Tout effacer ?\n\nCette action supprime ' + entries.length + ' entrée(s).')) return;
+    if(!window.confirm('Tout effacer ?\\n\\nCette action supprime ' + entries.length + ' entrée(s).')) return;
     entries = [];
     await idbSetAll(entries);
     render();
