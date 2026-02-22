@@ -1,0 +1,194 @@
+{
+  "format": "remuneration-debutant-indexeddb",
+  "formatVersion": 4,
+  "exportedAt": "2026-02-08T15:57:04.764Z",
+  "entries": [
+    {
+      "id": "1770399055142_a0302fc7522c68",
+      "date": "2026-02-06",
+      "nom": "Weibel",
+      "type": "PRIMEO",
+      "puissance": "6",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": false,
+      "iag": true
+    },
+    {
+      "id": "1770398995973_b278cead5b5ff",
+      "date": "2026-02-06",
+      "nom": "Franceschetto",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": true,
+      "digitalisation": true,
+      "iag": true
+    },
+    {
+      "id": "1770398961803_0db19a3bb98cd8",
+      "date": "2026-02-06",
+      "nom": "Lobjoie",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": true,
+      "iag": true
+    },
+    {
+      "id": "1770398912646_f0ca05ee8cbd28",
+      "date": "2026-02-06",
+      "nom": "Muller",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": true,
+      "iag": false
+    },
+    {
+      "id": "1770369138087_4639a280b1a608",
+      "date": "2026-02-05",
+      "nom": "WEISSENBERGER",
+      "type": "PRIMEO",
+      "puissance": "6",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": false,
+      "iag": false
+    },
+    {
+      "id": "1770369098513_024cbb2fd3059",
+      "date": "2026-02-05",
+      "nom": "Kapfer",
+      "type": "PRIMEO",
+      "puissance": "6",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": false,
+      "iag": true
+    },
+    {
+      "id": "1770369067775_6fbbbd389c683",
+      "date": "2026-02-05",
+      "nom": "Hans",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": false,
+      "iag": false
+    },
+    {
+      "id": "1770369022322_1554b4aac2817",
+      "date": "2026-02-04",
+      "nom": "Nusbaum",
+      "type": "PRIMEO",
+      "puissance": "6",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": false,
+      "iag": false
+    },
+    {
+      "id": "1770369010918_01e79159a76668",
+      "date": "2026-02-04",
+      "nom": "De Brito",
+      "type": "PRIMEO",
+      "puissance": "6",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": false,
+      "iag": false
+    },
+    {
+      "id": "1770369001121_938078966652f8",
+      "date": "2026-02-04",
+      "nom": "Monnier",
+      "type": "PRIMEO",
+      "puissance": "6",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": false,
+      "iag": false
+    },
+    {
+      "id": "1770368981937_3dc4e4c692451",
+      "date": "2026-02-04",
+      "nom": "Tonna",
+      "type": "PLEN_DUAL",
+      "puissance": "6-9",
+      "consommation": "6-13",
+      "assistance": false,
+      "digitalisation": false,
+      "iag": true
+    },
+    {
+      "id": "1770368927284_e386b87e3acf",
+      "date": "2026-02-04",
+      "nom": "Souprayen",
+      "type": "PLEN_DUAL",
+      "puissance": "6-9",
+      "consommation": "6-13",
+      "assistance": false,
+      "digitalisation": true,
+      "iag": true
+    },
+    {
+      "id": "1770368780052_e5f1356cbc1808",
+      "date": "2026-02-03",
+      "nom": "Pavlat",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": true,
+      "iag": false
+    },
+    {
+      "id": "1770368727516_62b0d32be155b8",
+      "date": "2026-02-03",
+      "nom": "Grandgirard",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": true,
+      "iag": false
+    },
+    {
+      "id": "1770368670753_ca61ad914924e8",
+      "date": "2026-02-03",
+      "nom": "Michel noel",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": true,
+      "iag": true
+    },
+    {
+      "id": "1770368620486_c57e3a1adb0ac",
+      "date": "2026-02-02",
+      "nom": "Lo",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": true,
+      "iag": true
+    },
+    {
+      "id": "1770368586877_b573f0f46ceef8",
+      "date": "2026-02-02",
+      "nom": "Naim",
+      "type": "PLEN_ELEC",
+      "puissance": "6-9",
+      "consommation": null,
+      "assistance": false,
+      "digitalisation": true,
+      "iag": true
+    }
+  ]
+}
