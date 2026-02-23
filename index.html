@@ -773,6 +773,11 @@
             </div>
           </div>
 
+          <div class="form-group">
+            <label for="contractIagRef">Référence IAG</label>
+            <input type="text" id="contractIagRef" placeholder="Ex: 406XXXXX / A-12345678" maxlength="50">
+          </div>
+
           <div class="alert alert-error" id="formError"></div>
 
           <div class="btn-row">
@@ -1775,6 +1780,8 @@
       const contractIagType = $('#contractIagType');
       const formError = $('#formError');
       const btnClearForm = $('#btnClearForm');
+      const contractIagRef = $('contractIagRef');
+
 
       const powerGroup = $('#powerGroup');
       const consoGroup = $('#consoGroup');
@@ -2056,33 +2063,34 @@
 
         if (!provider) return;
 
-        // Populate type dropdown
+        // Populate type dropdown (REMPLACE ton bloc actuel par celui-ci)
         contractType.innerHTML = '<option value="">-- Choisir --</option>';
-        
-        const types = CONTRACT_TYPES[provider];
+
+        const types = CONTRACTTYPES[provider];
         if (types) {
           const energyGroup = document.createElement('optgroup');
           energyGroup.label = 'Énergie';
           types.ENERGY.forEach(t => {
             const opt = document.createElement('option');
-            opt.value = t.value;
-            opt.textContent = t.label;
+            opt.value = t.value;       // IMPORTANT
+            opt.textContent = t.label; // Affichage
             energyGroup.appendChild(opt);
           });
           contractType.appendChild(energyGroup);
 
-          if (types.IAG.length > 0) {
-            const iagGroup = document.createElement('optgroup');
-            iagGroup.label = 'IAG';
+          if (types.IAG && types.IAG.length) {
+            const iagOptGroup = document.createElement('optgroup');
+            iagOptGroup.label = 'IAG';
             types.IAG.forEach(t => {
               const opt = document.createElement('option');
-              opt.value = t.value;
+              opt.value = t.value;       // IMPORTANT
               opt.textContent = t.label;
-              iagGroup.appendChild(opt);
+              iagOptGroup.appendChild(opt);
             });
-            contractType.appendChild(iagGroup);
+            contractType.appendChild(iagOptGroup);
           }
         }
+
 
         if (!type) return;
 
@@ -2130,6 +2138,8 @@
         const reference = contractRef.value.trim();
         const provider = contractProvider.value;
         const type = contractType.value;
+        const iagTypeSelected = contractIagType.value;
+        const iagReferenceInput = contractIagRef.value.trim();
 
         if (!date || !name || !reference || !provider || !type) {
           showError('Tous les champs obligatoires (*) doivent être remplis.');
@@ -2147,7 +2157,8 @@
           conso: null,
           axa: false,
           digitalisation: false,
-          iagType: null
+          iagType: null,
+          iagReference: null
         };
 
         if (type === 'DUAL') {
@@ -2164,9 +2175,19 @@
           contract.digitalisation = contractDigi.checked;
         }
 
-        if (!type.startsWith('IAG_') && contractIagType.value) {
-          contract.iagType = contractIagType.value;
+        if (!type.startsWith('IAG_') && iagTypeSelected && iagTypeSelected !== 'Aucun' && !iagReferenceInput) {
+          showError("Veuillez saisir la référence IAG.");
+          return;
         }
+
+        if (!type.startsWith('IAG_') && iagTypeSelected && iagTypeSelected !== 'Aucun') {
+          contract.iagType = iagTypeSelected;
+          contract.iagReference = iagReferenceInput ? iagReferenceInput : null;
+        } else {
+          contract.iagType = null;
+          contract.iagReference = null;
+        }
+
 
         try {
           await saveContract(contract);
