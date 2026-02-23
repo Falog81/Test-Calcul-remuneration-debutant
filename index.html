@@ -784,7 +784,702 @@
 
       <div class="card">
         <h2>📋 Liste des contrats</h2>
+        <div id="contractsList" class="list"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Jour -->
+    <div id="tab-jour" class="tab-content">
+      <div class="card">
+        <h2>📅 Rémunération du jour</h2>
         <div class="form-row">
+          <div class="form-group sm">
+            <label for="dayFilter">Date</label>
+            <input type="date" id="dayFilter">
+          </div>
+          <button class="btn-sm btn-ghost" id="btnTodayFilter">Aujourd'hui</button>
+        </div>
+        <div class="kpi-grid" id="dayKpis"></div>
+        <div id="dayList" class="list"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Semaine -->
+    <div id="tab-semaine" class="tab-content">
+      <div class="card">
+        <h2>📊 Rémunération hebdomadaire</h2>
+        <div class="form-row">
+          <div class="form-group sm">
+            <label for="weekFilter">Semaine</label>
+            <input type="week" id="weekFilter">
+          </div>
+          <button class="btn-sm btn-ghost" id="btnCurrentWeek">Semaine actuelle</button>
+        </div>
+        <div class="kpi-grid" id="weekKpis"></div>
+        <div id="weekStats"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Mois -->
+    <div id="tab-mois" class="tab-content">
+      <div class="card">
+        <h2>📈 Rémunération mensuelle</h2>
+        <div class="form-row">
+          <div class="form-group sm">
+            <label for="monthFilter">Mois</label>
+            <input type="month" id="monthFilter">
+          </div>
+          <button class="btn-sm btn-ghost" id="btnCurrentMonth">Mois actuel</button>
+        </div>
+        <div class="kpi-grid" id="monthKpis"></div>
+        <div id="monthStats"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Stats -->
+    <div id="tab-stats" class="tab-content">
+      <div class="card">
+        <h2>📉 Statistiques générales</h2>
+        <div class="kpi-grid" id="globalKpis"></div>
+        <div id="globalStats"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Export -->
+    <div id="tab-export" class="tab-content">
+      <div class="card">
+        <h2>💾 Export des données</h2>
+        <p style="color: var(--muted); margin-bottom: 16px;">Exportez vos contrats au format JSON pour sauvegarde ou transfert.</p>
+        <div class="btn-row">
+          <button class="btn-primary" id="btnExportJson">📥 Télécharger JSON</button>
+          <button class="btn-ghost" id="btnImportJson">📤 Importer JSON</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none;">
+        </div>
+        <div class="alert alert-info" id="exportAlert" style="margin-top: 16px;"></div>
+        <div id="exportPreviewContainer" style="display:none; margin-top: 20px;">
+          <h2>Aperçu des données</h2>
+          <div class="export-preview" id="exportPreview"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // ========== DATA STRUCTURE ==========
+    const CONFIG = {
+      tarifs: {
+        PLENITUDE: {
+          'Elec': [
+            { label: '3 kVA', value: '3kVA', remuneration: 50 },
+            { label: '6 kVA', value: '6kVA', remuneration: 50 },
+            { label: '9 kVA', value: '9kVA', remuneration: 60 },
+            { label: '12 kVA', value: '12kVA', remuneration: 60 },
+            { label: '15 kVA', value: '15kVA', remuneration: 60 },
+            { label: '18 kVA', value: '18kVA', remuneration: 70 },
+            { label: '24 kVA', value: '24kVA', remuneration: 70 },
+            { label: '30 kVA', value: '30kVA', remuneration: 70 },
+            { label: '36 kVA', value: '36kVA', remuneration: 80 }
+          ],
+          'Gaz': [
+            { label: '< 6000 kWh', value: '<6000', remuneration: 40 },
+            { label: '6000-12000 kWh', value: '6000-12000', remuneration: 50 },
+            { label: '12000-30000 kWh', value: '12000-30000', remuneration: 60 },
+            { label: '> 30000 kWh', value: '>30000', remuneration: 70 }
+          ],
+          'Dual': [
+            { label: 'Elec+Gaz', value: 'dual', remuneration: 70 }
+          ]
+        },
+        PRIMEO: {
+          'Elec': [
+            { label: '3 kVA', value: '3kVA', remuneration: 40 },
+            { label: '6 kVA', value: '6kVA', remuneration: 40 },
+            { label: '9 kVA', value: '9kVA', remuneration: 45 },
+            { label: '12 kVA', value: '12kVA', remuneration: 45 },
+            { label: '15 kVA', value: '15kVA', remuneration: 50 },
+            { label: '18 kVA', value: '18kVA', remuneration: 55 },
+            { label: '24 kVA', value: '24kVA', remuneration: 55 },
+            { label: '30 kVA', value: '30kVA', remuneration: 60 },
+            { label: '36 kVA', value: '36kVA', remuneration: 65 }
+          ],
+          'Gaz': [
+            { label: '< 6000 kWh', value: '<6000', remuneration: 35 },
+            { label: '6000-12000 kWh', value: '6000-12000', remuneration: 40 },
+            { label: '12000-30000 kWh', value: '12000-30000', remuneration: 50 },
+            { label: '> 30000 kWh', value: '>30000', remuneration: 60 }
+          ],
+          'Dual': [
+            { label: 'Elec+Gaz', value: 'dual', remuneration: 60 }
+          ]
+        }
+      },
+      iag: {
+        PJI: 7,
+        ELA: 10
+      }
+    };
+
+    let contracts = [];
+
+    // ========== LOCAL STORAGE ==========
+    function saveContracts() {
+      try {
+        localStorage.setItem('remunerationContracts', JSON.stringify(contracts));
+      } catch (e) {
+        showToast('Erreur de sauvegarde', 'error');
+      }
+    }
+
+    function loadContracts() {
+      try {
+        const data = localStorage.getItem('remunerationContracts');
+        if (data) {
+          contracts = JSON.parse(data);
+        }
+      } catch (e) {
+        showToast('Erreur de chargement', 'error');
+      }
+    }
+
+    // ========== THEME ==========
+    function initTheme() {
+      const saved = localStorage.getItem('theme') || 'auto';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('themeToggle').value = saved;
+    }
+
+    document.getElementById('themeToggle').addEventListener('change', function() {
+      const theme = this.value;
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    });
+
+    // ========== TABS ==========
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const targetTab = this.dataset.tab;
+        
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        this.classList.add('active');
+        document.getElementById('tab-' + targetTab).classList.add('active');
+
+        if (targetTab === 'jour') renderDayView();
+        if (targetTab === 'semaine') renderWeekView();
+        if (targetTab === 'mois') renderMonthView();
+        if (targetTab === 'stats') renderStatsView();
+        if (targetTab === 'export') renderExportView();
+      });
+    });
+
+    // ========== TOAST ==========
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.getElementById('toastContainer').appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ========== FORM LOGIC ==========
+    const providerSelect = document.getElementById('contractProvider');
+    const typeSelect = document.getElementById('contractType');
+    const powerGroup = document.getElementById('powerGroup');
+    const powerSelect = document.getElementById('contractPower');
+    const consoGroup = document.getElementById('consoGroup');
+    const consoSelect = document.getElementById('contractConso');
+    const optionsGroup = document.getElementById('optionsGroup');
+    const iagGroup = document.getElementById('iagGroup');
+
+    providerSelect.addEventListener('change', function() {
+      const provider = this.value;
+      typeSelect.innerHTML = '<option value="">-- Choisir --</option>';
+      powerGroup.style.display = 'none';
+      consoGroup.style.display = 'none';
+      optionsGroup.style.display = 'none';
+      iagGroup.style.display = 'none';
+
+      if (provider && CONFIG.tarifs[provider]) {
+        Object.keys(CONFIG.tarifs[provider]).forEach(type => {
+          const opt = document.createElement('option');
+          opt.value = type;
+          opt.textContent = type;
+          typeSelect.appendChild(opt);
+        });
+      }
+    });
+
+    typeSelect.addEventListener('change', function() {
+      const provider = providerSelect.value;
+      const type = this.value;
+      
+      powerGroup.style.display = 'none';
+      consoGroup.style.display = 'none';
+      powerSelect.innerHTML = '';
+      consoSelect.innerHTML = '';
+      optionsGroup.style.display = 'none';
+      iagGroup.style.display = 'none';
+
+      if (provider && type && CONFIG.tarifs[provider][type]) {
+        const options = CONFIG.tarifs[provider][type];
+        
+        if (type === 'Elec' || type === 'Dual') {
+          powerGroup.style.display = 'block';
+          options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            powerSelect.appendChild(option);
+          });
+          optionsGroup.style.display = 'block';
+          iagGroup.style.display = 'block';
+        } else if (type === 'Gaz') {
+          consoGroup.style.display = 'block';
+          options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            consoSelect.appendChild(option);
+          });
+          iagGroup.style.display = 'block';
+        }
+      }
+    });
+
+    document.getElementById('btnClearForm').addEventListener('click', function() {
+      document.getElementById('addContractForm').reset();
+      powerGroup.style.display = 'none';
+      consoGroup.style.display = 'none';
+      optionsGroup.style.display = 'none';
+      iagGroup.style.display = 'none';
+      document.getElementById('formError').classList.remove('show');
+    });
+
+    // ========== ADD CONTRACT ==========
+    document.getElementById('addContractForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const date = document.getElementById('contractDate').value;
+      const name = document.getElementById('contractName').value.trim();
+      const ref = document.getElementById('contractRef').value.trim();
+      const provider = providerSelect.value;
+      const type = typeSelect.value;
+      const power = powerSelect.value;
+      const conso = consoSelect.value;
+      const axa = document.getElementById('contractAxa').checked;
+      const digi = document.getElementById('contractDigi').checked;
+      const iagType = document.getElementById('contractIagType').value;
+
+      if (!date || !name || !ref || !provider || !type) {
+        showToast('Veuillez remplir tous les champs obligatoires', 'error');
+        return;
+      }
+
+      let baseRemuneration = 0;
+      let selectedOption = power || conso;
+
+      if (CONFIG.tarifs[provider] && CONFIG.tarifs[provider][type]) {
+        const options = CONFIG.tarifs[provider][type];
+        const found = options.find(o => o.value === selectedOption);
+        if (found) {
+          baseRemuneration = found.remuneration;
+        }
+      }
+
+      let totalRemuneration = baseRemuneration;
+      if (axa) totalRemuneration += 7;
+      if (digi) totalRemuneration += 2;
+      if (iagType && CONFIG.iag[iagType]) {
+        totalRemuneration += CONFIG.iag[iagType];
+      }
+
+      const contract = {
+        id: Date.now(),
+        date,
+        name,
+        ref,
+        provider,
+        type,
+        power: power || null,
+        conso: conso || null,
+        axa,
+        digi,
+        iagType: iagType || null,
+        remuneration: totalRemuneration
+      };
+
+      contracts.push(contract);
+      saveContracts();
+      renderContractsList();
+      this.reset();
+      powerGroup.style.display = 'none';
+      consoGroup.style.display = 'none';
+      optionsGroup.style.display = 'none';
+      iagGroup.style.display = 'none';
+      showToast('Contrat ajouté avec succès !');
+      document.getElementById('formError').classList.remove('show');
+    });
+
+    // ========== DELETE CONTRACT ==========
+    function deleteContract(id) {
+      if (confirm('Voulez-vous vraiment supprimer ce contrat ?')) {
+        contracts = contracts.filter(c => c.id !== id);
+        saveContracts();
+        renderContractsList();
+        showToast('Contrat supprimé', 'success');
+      }
+    }
+
+    // ========== RENDER CONTRACTS LIST ==========
+    function renderContractsList() {
+      const container = document.getElementById('contractsList');
+      
+      if (contracts.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>Aucun contrat enregistré</p></div>';
+        return;
+      }
+
+      const sorted = [...contracts].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      container.innerHTML = sorted.map(c => {
+        const providerBadge = c.provider === 'PLENITUDE' ? 'badge-plenitude' : 'badge-primeo';
+        const details = [];
+        if (c.type) details.push(c.type);
+        if (c.power) details.push(c.power);
+        if (c.conso) details.push(c.conso);
+        if (c.axa) details.push('AXA');
+        if (c.digi) details.push('Digi');
+        if (c.iagType) details.push(`IAG ${c.iagType}`);
+        
+        return `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${c.name} - ${c.ref}</div>
+              <div class="list-item-meta">
+                <div>${new Date(c.date + 'T00:00:00').toLocaleDateString('fr-FR')}</div>
+                <div>${details.join(' • ')}</div>
+              </div>
+            </div>
+            <div class="list-item-actions">
+              <span class="badge ${providerBadge}">${c.provider}</span>
+              <span class="amount">${c.remuneration}€</span>
+              <button class="btn-sm btn-danger" onclick="deleteContract(${c.id})">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ========== DAY VIEW ==========
+    function renderDayView() {
+      const filterDate = document.getElementById('dayFilter').value || new Date().toISOString().split('T')[0];
+      const dayContracts = contracts.filter(c => c.date === filterDate);
+      
+      const total = dayContracts.reduce((sum, c) => sum + c.remuneration, 0);
+      const count = dayContracts.length;
+      
+      document.getElementById('dayKpis').innerHTML = `
+        <div class="kpi">
+          <div class="kpi-label">Contrats</div>
+          <div class="kpi-value">${count}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Rémunération</div>
+          <div class="kpi-value">${total}€</div>
+        </div>
+      `;
+      
+      const listContainer = document.getElementById('dayList');
+      if (dayContracts.length === 0) {
+        listContainer.innerHTML = '<div class="empty-state"><p>Aucun contrat ce jour</p></div>';
+      } else {
+        listContainer.innerHTML = dayContracts.map(c => `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${c.name} - ${c.ref}</div>
+              <div class="list-item-meta">${c.provider} • ${c.type}</div>
+            </div>
+            <span class="amount">${c.remuneration}€</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    document.getElementById('btnTodayFilter').addEventListener('click', function() {
+      document.getElementById('dayFilter').value = new Date().toISOString().split('T')[0];
+      renderDayView();
+    });
+
+    document.getElementById('dayFilter').addEventListener('change', renderDayView);
+
+    // ========== WEEK VIEW ==========
+    function renderWeekView() {
+      const weekInput = document.getElementById('weekFilter').value;
+      if (!weekInput) return;
+      
+      const [year, week] = weekInput.split('-W').map(Number);
+      const weekContracts = contracts.filter(c => {
+        const d = new Date(c.date + 'T00:00:00');
+        const cWeek = getWeekNumber(d);
+        return cWeek.year === year && cWeek.week === week;
+      });
+      
+      const total = weekContracts.reduce((sum, c) => sum + c.remuneration, 0);
+      const count = weekContracts.length;
+      const avg = count > 0 ? (total / count).toFixed(2) : 0;
+      
+      document.getElementById('weekKpis').innerHTML = `
+        <div class="kpi">
+          <div class="kpi-label">Contrats</div>
+          <div class="kpi-value">${count}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Total</div>
+          <div class="kpi-value">${total}€</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Moyenne</div>
+          <div class="kpi-value">${avg}€</div>
+        </div>
+      `;
+      
+      const byProvider = {};
+      weekContracts.forEach(c => {
+        if (!byProvider[c.provider]) byProvider[c.provider] = 0;
+        byProvider[c.provider] += c.remuneration;
+      });
+      
+      document.getElementById('weekStats').innerHTML = Object.keys(byProvider).map(provider => {
+        const amount = byProvider[provider];
+        const percent = total > 0 ? (amount / total * 100).toFixed(1) : 0;
+        return `
+          <div class="stat-bar">
+            <div class="stat-bar-header">
+              <span class="stat-bar-title">${provider}</span>
+              <span class="stat-bar-value">${amount}€</span>
+            </div>
+            <div class="stat-bar-progress">
+              <div class="stat-bar-fill" style="width: ${percent}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('btnCurrentWeek').addEventListener('click', function() {
+      const now = new Date();
+      const wk = getWeekNumber(now);
+      document.getElementById('weekFilter').value = `${wk.year}-W${String(wk.week).padStart(2, '0')}`;
+      renderWeekView();
+    });
+
+    document.getElementById('weekFilter').addEventListener('change', renderWeekView);
+
+    function getWeekNumber(d) {
+      const target = new Date(d.valueOf());
+      const dayNum = (d.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayNum + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+      }
+      return {
+        year: target.getFullYear(),
+        week: 1 + Math.ceil((firstThursday - target) / 604800000)
+      };
+    }
+
+    // ========== MONTH VIEW ==========
+    function renderMonthView() {
+      const monthInput = document.getElementById('monthFilter').value;
+      if (!monthInput) return;
+      
+      const [year, month] = monthInput.split('-').map(Number);
+      const monthContracts = contracts.filter(c => {
+        const d = new Date(c.date + 'T00:00:00');
+        return d.getFullYear() === year && (d.getMonth() + 1) === month;
+      });
+      
+      const total = monthContracts.reduce((sum, c) => sum + c.remuneration, 0);
+      const count = monthContracts.length;
+      const avg = count > 0 ? (total / count).toFixed(2) : 0;
+      
+      document.getElementById('monthKpis').innerHTML = `
+        <div class="kpi">
+          <div class="kpi-label">Contrats</div>
+          <div class="kpi-value">${count}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Total</div>
+          <div class="kpi-value">${total}€</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Moyenne</div>
+          <div class="kpi-value">${avg}€</div>
+        </div>
+      `;
+      
+      const byType = {};
+      monthContracts.forEach(c => {
+        const key = `${c.provider} - ${c.type}`;
+        if (!byType[key]) byType[key] = { count: 0, total: 0 };
+        byType[key].count++;
+        byType[key].total += c.remuneration;
+      });
+      
+      document.getElementById('monthStats').innerHTML = Object.keys(byType).map(key => {
+        const data = byType[key];
+        const percent = total > 0 ? (data.total / total * 100).toFixed(1) : 0;
+        return `
+          <div class="stat-bar">
+            <div class="stat-bar-header">
+              <span class="stat-bar-title">${key} (${data.count})</span>
+              <span class="stat-bar-value">${data.total}€</span>
+            </div>
+            <div class="stat-bar-progress">
+              <div class="stat-bar-fill" style="width: ${percent}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('btnCurrentMonth').addEventListener('click', function() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      document.getElementById('monthFilter').value = `${year}-${month}`;
+      renderMonthView();
+    });
+
+    document.getElementById('monthFilter').addEventListener('change', renderMonthView);
+
+    // ========== STATS VIEW ==========
+    function renderStatsView() {
+      const total = contracts.reduce((sum, c) => sum + c.remuneration, 0);
+      const count = contracts.length;
+      const avg = count > 0 ? (total / count).toFixed(2) : 0;
+      
+      const byProvider = {};
+      contracts.forEach(c => {
+        if (!byProvider[c.provider]) byProvider[c.provider] = { count: 0, total: 0 };
+        byProvider[c.provider].count++;
+        byProvider[c.provider].total += c.remuneration;
+      });
+      
+      document.getElementById('globalKpis').innerHTML = `
+        <div class="kpi">
+          <div class="kpi-label">Total Contrats</div>
+          <div class="kpi-value">${count}</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Rémunération Totale</div>
+          <div class="kpi-value">${total}€</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Moyenne</div>
+          <div class="kpi-value">${avg}€</div>
+        </div>
+      `;
+      
+      document.getElementById('globalStats').innerHTML = Object.keys(byProvider).map(provider => {
+        const data = byProvider[provider];
+        const percent = total > 0 ? (data.total / total * 100).toFixed(1) : 0;
+        return `
+          <div class="stat-bar">
+            <div class="stat-bar-header">
+              <span class="stat-bar-title">${provider} (${data.count} contrats)</span>
+              <span class="stat-bar-value">${data.total}€</span>
+            </div>
+            <div class="stat-bar-progress">
+              <div class="stat-bar-fill" style="width: ${percent}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ========== EXPORT VIEW ==========
+    function renderExportView() {
+      const alert = document.getElementById('exportAlert');
+      alert.textContent = `${contracts.length} contrat(s) prêt(s) à être exporté(s)`;
+      alert.classList.add('show');
+      
+      const preview = document.getElementById('exportPreview');
+      preview.textContent = JSON.stringify(contracts, null, 2);
+      document.getElementById('exportPreviewContainer').style.display = 'block';
+    }
+
+    document.getElementById('btnExportJson').addEventListener('click', function() {
+      const dataStr = JSON.stringify(contracts, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `remuneration_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Export réussi !', 'success');
+    });
+
+    document.getElementById('btnImportJson').addEventListener('click', function() {
+      document.getElementById('importFileInput').click();
+    });
+
+    document.getElementById('importFileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported)) {
+            contracts = imported;
+            saveContracts();
+            renderContractsList();
+            showToast('Import réussi !', 'success');
+          } else {
+            showToast('Format JSON invalide', 'error');
+          }
+        } catch (err) {
+          showToast('Erreur lors de l\'import', 'error');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // ========== INIT ==========
+    function init() {
+      initTheme();
+      loadContracts();
+      renderContractsList();
+      
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('contractDate').value = today;
+      document.getElementById('dayFilter').value = today;
+      
+      const now = new Date();
+      const wk = getWeekNumber(now);
+      document.getElementById('weekFilter').value = `${wk.year}-W${String(wk.week).padStart(2, '0')}`;
+      
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      document.getElementById('monthFilter').value = `${year}-${month}`;
+      
+      document.getElementById('currentDate').textContent = now.toLocaleDateString('fr-FR');
+    }
+
+    init();
+  </script>
+</body>
+</html>      <div class="form-row">
           <div class="form-group">
             <label for="searchName">🔍 Recherche (nom ou référence)</label>
             <input type="text" id="searchName" placeholder="Rechercher...">
