@@ -704,7 +704,7 @@
 
   <!-- Main Container -->
   <main class="container">
-    <!-- Tab: Contrats -->
+    <!-- Tab Contrats -->
     <div id="tab-contrats" class="tab-content active">
       <div class="card">
         <h2>➕ Ajouter un contrat</h2>
@@ -789,702 +789,7 @@
 
       <div class="card">
         <h2>📋 Liste des contrats</h2>
-        <div id="contractsList" class="list"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Jour -->
-    <div id="tab-jour" class="tab-content">
-      <div class="card">
-        <h2>📅 Rémunération du jour</h2>
         <div class="form-row">
-          <div class="form-group sm">
-            <label for="dayFilter">Date</label>
-            <input type="date" id="dayFilter">
-          </div>
-          <button class="btn-sm btn-ghost" id="btnTodayFilter">Aujourd'hui</button>
-        </div>
-        <div class="kpi-grid" id="dayKpis"></div>
-        <div id="dayList" class="list"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Semaine -->
-    <div id="tab-semaine" class="tab-content">
-      <div class="card">
-        <h2>📊 Rémunération hebdomadaire</h2>
-        <div class="form-row">
-          <div class="form-group sm">
-            <label for="weekFilter">Semaine</label>
-            <input type="week" id="weekFilter">
-          </div>
-          <button class="btn-sm btn-ghost" id="btnCurrentWeek">Semaine actuelle</button>
-        </div>
-        <div class="kpi-grid" id="weekKpis"></div>
-        <div id="weekStats"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Mois -->
-    <div id="tab-mois" class="tab-content">
-      <div class="card">
-        <h2>📈 Rémunération mensuelle</h2>
-        <div class="form-row">
-          <div class="form-group sm">
-            <label for="monthFilter">Mois</label>
-            <input type="month" id="monthFilter">
-          </div>
-          <button class="btn-sm btn-ghost" id="btnCurrentMonth">Mois actuel</button>
-        </div>
-        <div class="kpi-grid" id="monthKpis"></div>
-        <div id="monthStats"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Stats -->
-    <div id="tab-stats" class="tab-content">
-      <div class="card">
-        <h2>📉 Statistiques générales</h2>
-        <div class="kpi-grid" id="globalKpis"></div>
-        <div id="globalStats"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Export -->
-    <div id="tab-export" class="tab-content">
-      <div class="card">
-        <h2>💾 Export des données</h2>
-        <p style="color: var(--muted); margin-bottom: 16px;">Exportez vos contrats au format JSON pour sauvegarde ou transfert.</p>
-        <div class="btn-row">
-          <button class="btn-primary" id="btnExportJson">📥 Télécharger JSON</button>
-          <button class="btn-ghost" id="btnImportJson">📤 Importer JSON</button>
-          <input type="file" id="importFileInput" accept=".json" style="display:none;">
-        </div>
-        <div class="alert alert-info" id="exportAlert" style="margin-top: 16px;"></div>
-        <div id="exportPreviewContainer" style="display:none; margin-top: 20px;">
-          <h2>Aperçu des données</h2>
-          <div class="export-preview" id="exportPreview"></div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Toast Container -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <script>
-    // ========== DATA STRUCTURE ==========
-    const CONFIG = {
-      tarifs: {
-        PLENITUDE: {
-          'Elec': [
-            { label: '3 kVA', value: '3kVA', remuneration: 50 },
-            { label: '6 kVA', value: '6kVA', remuneration: 50 },
-            { label: '9 kVA', value: '9kVA', remuneration: 60 },
-            { label: '12 kVA', value: '12kVA', remuneration: 60 },
-            { label: '15 kVA', value: '15kVA', remuneration: 60 },
-            { label: '18 kVA', value: '18kVA', remuneration: 70 },
-            { label: '24 kVA', value: '24kVA', remuneration: 70 },
-            { label: '30 kVA', value: '30kVA', remuneration: 70 },
-            { label: '36 kVA', value: '36kVA', remuneration: 80 }
-          ],
-          'Gaz': [
-            { label: '< 6000 kWh', value: '<6000', remuneration: 40 },
-            { label: '6000-12000 kWh', value: '6000-12000', remuneration: 50 },
-            { label: '12000-30000 kWh', value: '12000-30000', remuneration: 60 },
-            { label: '> 30000 kWh', value: '>30000', remuneration: 70 }
-          ],
-          'Dual': [
-            { label: 'Elec+Gaz', value: 'dual', remuneration: 70 }
-          ]
-        },
-        PRIMEO: {
-          'Elec': [
-            { label: '3 kVA', value: '3kVA', remuneration: 40 },
-            { label: '6 kVA', value: '6kVA', remuneration: 40 },
-            { label: '9 kVA', value: '9kVA', remuneration: 45 },
-            { label: '12 kVA', value: '12kVA', remuneration: 45 },
-            { label: '15 kVA', value: '15kVA', remuneration: 50 },
-            { label: '18 kVA', value: '18kVA', remuneration: 55 },
-            { label: '24 kVA', value: '24kVA', remuneration: 55 },
-            { label: '30 kVA', value: '30kVA', remuneration: 60 },
-            { label: '36 kVA', value: '36kVA', remuneration: 65 }
-          ],
-          'Gaz': [
-            { label: '< 6000 kWh', value: '<6000', remuneration: 35 },
-            { label: '6000-12000 kWh', value: '6000-12000', remuneration: 40 },
-            { label: '12000-30000 kWh', value: '12000-30000', remuneration: 50 },
-            { label: '> 30000 kWh', value: '>30000', remuneration: 60 }
-          ],
-          'Dual': [
-            { label: 'Elec+Gaz', value: 'dual', remuneration: 60 }
-          ]
-        }
-      },
-      iag: {
-        PJI: 7,
-        ELA: 10
-      }
-    };
-
-    let contracts = [];
-
-    // ========== LOCAL STORAGE ==========
-    function saveContracts() {
-      try {
-        localStorage.setItem('remunerationContracts', JSON.stringify(contracts));
-      } catch (e) {
-        showToast('Erreur de sauvegarde', 'error');
-      }
-    }
-
-    function loadContracts() {
-      try {
-        const data = localStorage.getItem('remunerationContracts');
-        if (data) {
-          contracts = JSON.parse(data);
-        }
-      } catch (e) {
-        showToast('Erreur de chargement', 'error');
-      }
-    }
-
-    // ========== THEME ==========
-    function initTheme() {
-      const saved = localStorage.getItem('theme') || 'auto';
-      document.documentElement.setAttribute('data-theme', saved);
-      document.getElementById('themeToggle').value = saved;
-    }
-
-    document.getElementById('themeToggle').addEventListener('change', function() {
-      const theme = this.value;
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
-    });
-
-    // ========== TABS ==========
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const targetTab = this.dataset.tab;
-        
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        this.classList.add('active');
-        document.getElementById('tab-' + targetTab).classList.add('active');
-
-        if (targetTab === 'jour') renderDayView();
-        if (targetTab === 'semaine') renderWeekView();
-        if (targetTab === 'mois') renderMonthView();
-        if (targetTab === 'stats') renderStatsView();
-        if (targetTab === 'export') renderExportView();
-      });
-    });
-
-    // ========== TOAST ==========
-    function showToast(message, type = 'success') {
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.textContent = message;
-      document.getElementById('toastContainer').appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ========== FORM LOGIC ==========
-    const providerSelect = document.getElementById('contractProvider');
-    const typeSelect = document.getElementById('contractType');
-    const powerGroup = document.getElementById('powerGroup');
-    const powerSelect = document.getElementById('contractPower');
-    const consoGroup = document.getElementById('consoGroup');
-    const consoSelect = document.getElementById('contractConso');
-    const optionsGroup = document.getElementById('optionsGroup');
-    const iagGroup = document.getElementById('iagGroup');
-
-    providerSelect.addEventListener('change', function() {
-      const provider = this.value;
-      typeSelect.innerHTML = '<option value="">-- Choisir --</option>';
-      powerGroup.style.display = 'none';
-      consoGroup.style.display = 'none';
-      optionsGroup.style.display = 'none';
-      iagGroup.style.display = 'none';
-
-      if (provider && CONFIG.tarifs[provider]) {
-        Object.keys(CONFIG.tarifs[provider]).forEach(type => {
-          const opt = document.createElement('option');
-          opt.value = type;
-          opt.textContent = type;
-          typeSelect.appendChild(opt);
-        });
-      }
-    });
-
-    typeSelect.addEventListener('change', function() {
-      const provider = providerSelect.value;
-      const type = this.value;
-      
-      powerGroup.style.display = 'none';
-      consoGroup.style.display = 'none';
-      powerSelect.innerHTML = '';
-      consoSelect.innerHTML = '';
-      optionsGroup.style.display = 'none';
-      iagGroup.style.display = 'none';
-
-      if (provider && type && CONFIG.tarifs[provider][type]) {
-        const options = CONFIG.tarifs[provider][type];
-        
-        if (type === 'Elec' || type === 'Dual') {
-          powerGroup.style.display = 'block';
-          options.forEach(opt => {
-            const option = document.createElement('option');
-            option.value = opt.value;
-            option.textContent = opt.label;
-            powerSelect.appendChild(option);
-          });
-          optionsGroup.style.display = 'block';
-          iagGroup.style.display = 'block';
-        } else if (type === 'Gaz') {
-          consoGroup.style.display = 'block';
-          options.forEach(opt => {
-            const option = document.createElement('option');
-            option.value = opt.value;
-            option.textContent = opt.label;
-            consoSelect.appendChild(option);
-          });
-          iagGroup.style.display = 'block';
-        }
-      }
-    });
-
-    document.getElementById('btnClearForm').addEventListener('click', function() {
-      document.getElementById('addContractForm').reset();
-      powerGroup.style.display = 'none';
-      consoGroup.style.display = 'none';
-      optionsGroup.style.display = 'none';
-      iagGroup.style.display = 'none';
-      document.getElementById('formError').classList.remove('show');
-    });
-
-    // ========== ADD CONTRACT ==========
-    document.getElementById('addContractForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const date = document.getElementById('contractDate').value;
-      const name = document.getElementById('contractName').value.trim();
-      const ref = document.getElementById('contractRef').value.trim();
-      const provider = providerSelect.value;
-      const type = typeSelect.value;
-      const power = powerSelect.value;
-      const conso = consoSelect.value;
-      const axa = document.getElementById('contractAxa').checked;
-      const digi = document.getElementById('contractDigi').checked;
-      const iagType = document.getElementById('contractIagType').value;
-
-      if (!date || !name || !ref || !provider || !type) {
-        showToast('Veuillez remplir tous les champs obligatoires', 'error');
-        return;
-      }
-
-      let baseRemuneration = 0;
-      let selectedOption = power || conso;
-
-      if (CONFIG.tarifs[provider] && CONFIG.tarifs[provider][type]) {
-        const options = CONFIG.tarifs[provider][type];
-        const found = options.find(o => o.value === selectedOption);
-        if (found) {
-          baseRemuneration = found.remuneration;
-        }
-      }
-
-      let totalRemuneration = baseRemuneration;
-      if (axa) totalRemuneration += 7;
-      if (digi) totalRemuneration += 2;
-      if (iagType && CONFIG.iag[iagType]) {
-        totalRemuneration += CONFIG.iag[iagType];
-      }
-
-      const contract = {
-        id: Date.now(),
-        date,
-        name,
-        ref,
-        provider,
-        type,
-        power: power || null,
-        conso: conso || null,
-        axa,
-        digi,
-        iagType: iagType || null,
-        remuneration: totalRemuneration
-      };
-
-      contracts.push(contract);
-      saveContracts();
-      renderContractsList();
-      this.reset();
-      powerGroup.style.display = 'none';
-      consoGroup.style.display = 'none';
-      optionsGroup.style.display = 'none';
-      iagGroup.style.display = 'none';
-      showToast('Contrat ajouté avec succès !');
-      document.getElementById('formError').classList.remove('show');
-    });
-
-    // ========== DELETE CONTRACT ==========
-    function deleteContract(id) {
-      if (confirm('Voulez-vous vraiment supprimer ce contrat ?')) {
-        contracts = contracts.filter(c => c.id !== id);
-        saveContracts();
-        renderContractsList();
-        showToast('Contrat supprimé', 'success');
-      }
-    }
-
-    // ========== RENDER CONTRACTS LIST ==========
-    function renderContractsList() {
-      const container = document.getElementById('contractsList');
-      
-      if (contracts.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>Aucun contrat enregistré</p></div>';
-        return;
-      }
-
-      const sorted = [...contracts].sort((a, b) => new Date(b.date) - new Date(a.date));
-      
-      container.innerHTML = sorted.map(c => {
-        const providerBadge = c.provider === 'PLENITUDE' ? 'badge-plenitude' : 'badge-primeo';
-        const details = [];
-        if (c.type) details.push(c.type);
-        if (c.power) details.push(c.power);
-        if (c.conso) details.push(c.conso);
-        if (c.axa) details.push('AXA');
-        if (c.digi) details.push('Digi');
-        if (c.iagType) details.push(`IAG ${c.iagType}`);
-        
-        return `
-          <div class="list-item">
-            <div class="list-item-content">
-              <div class="list-item-title">${c.name} - ${c.ref}</div>
-              <div class="list-item-meta">
-                <div>${new Date(c.date + 'T00:00:00').toLocaleDateString('fr-FR')}</div>
-                <div>${details.join(' • ')}</div>
-              </div>
-            </div>
-            <div class="list-item-actions">
-              <span class="badge ${providerBadge}">${c.provider}</span>
-              <span class="amount">${c.remuneration}€</span>
-              <button class="btn-sm btn-danger" onclick="deleteContract(${c.id})">🗑️</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // ========== DAY VIEW ==========
-    function renderDayView() {
-      const filterDate = document.getElementById('dayFilter').value || new Date().toISOString().split('T')[0];
-      const dayContracts = contracts.filter(c => c.date === filterDate);
-      
-      const total = dayContracts.reduce((sum, c) => sum + c.remuneration, 0);
-      const count = dayContracts.length;
-      
-      document.getElementById('dayKpis').innerHTML = `
-        <div class="kpi">
-          <div class="kpi-label">Contrats</div>
-          <div class="kpi-value">${count}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Rémunération</div>
-          <div class="kpi-value">${total}€</div>
-        </div>
-      `;
-      
-      const listContainer = document.getElementById('dayList');
-      if (dayContracts.length === 0) {
-        listContainer.innerHTML = '<div class="empty-state"><p>Aucun contrat ce jour</p></div>';
-      } else {
-        listContainer.innerHTML = dayContracts.map(c => `
-          <div class="list-item">
-            <div class="list-item-content">
-              <div class="list-item-title">${c.name} - ${c.ref}</div>
-              <div class="list-item-meta">${c.provider} • ${c.type}</div>
-            </div>
-            <span class="amount">${c.remuneration}€</span>
-          </div>
-        `).join('');
-      }
-    }
-
-    document.getElementById('btnTodayFilter').addEventListener('click', function() {
-      document.getElementById('dayFilter').value = new Date().toISOString().split('T')[0];
-      renderDayView();
-    });
-
-    document.getElementById('dayFilter').addEventListener('change', renderDayView);
-
-    // ========== WEEK VIEW ==========
-    function renderWeekView() {
-      const weekInput = document.getElementById('weekFilter').value;
-      if (!weekInput) return;
-      
-      const [year, week] = weekInput.split('-W').map(Number);
-      const weekContracts = contracts.filter(c => {
-        const d = new Date(c.date + 'T00:00:00');
-        const cWeek = getWeekNumber(d);
-        return cWeek.year === year && cWeek.week === week;
-      });
-      
-      const total = weekContracts.reduce((sum, c) => sum + c.remuneration, 0);
-      const count = weekContracts.length;
-      const avg = count > 0 ? (total / count).toFixed(2) : 0;
-      
-      document.getElementById('weekKpis').innerHTML = `
-        <div class="kpi">
-          <div class="kpi-label">Contrats</div>
-          <div class="kpi-value">${count}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Total</div>
-          <div class="kpi-value">${total}€</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Moyenne</div>
-          <div class="kpi-value">${avg}€</div>
-        </div>
-      `;
-      
-      const byProvider = {};
-      weekContracts.forEach(c => {
-        if (!byProvider[c.provider]) byProvider[c.provider] = 0;
-        byProvider[c.provider] += c.remuneration;
-      });
-      
-      document.getElementById('weekStats').innerHTML = Object.keys(byProvider).map(provider => {
-        const amount = byProvider[provider];
-        const percent = total > 0 ? (amount / total * 100).toFixed(1) : 0;
-        return `
-          <div class="stat-bar">
-            <div class="stat-bar-header">
-              <span class="stat-bar-title">${provider}</span>
-              <span class="stat-bar-value">${amount}€</span>
-            </div>
-            <div class="stat-bar-progress">
-              <div class="stat-bar-fill" style="width: ${percent}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    document.getElementById('btnCurrentWeek').addEventListener('click', function() {
-      const now = new Date();
-      const wk = getWeekNumber(now);
-      document.getElementById('weekFilter').value = `${wk.year}-W${String(wk.week).padStart(2, '0')}`;
-      renderWeekView();
-    });
-
-    document.getElementById('weekFilter').addEventListener('change', renderWeekView);
-
-    function getWeekNumber(d) {
-      const target = new Date(d.valueOf());
-      const dayNum = (d.getDay() + 6) % 7;
-      target.setDate(target.getDate() - dayNum + 3);
-      const firstThursday = target.valueOf();
-      target.setMonth(0, 1);
-      if (target.getDay() !== 4) {
-        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-      }
-      return {
-        year: target.getFullYear(),
-        week: 1 + Math.ceil((firstThursday - target) / 604800000)
-      };
-    }
-
-    // ========== MONTH VIEW ==========
-    function renderMonthView() {
-      const monthInput = document.getElementById('monthFilter').value;
-      if (!monthInput) return;
-      
-      const [year, month] = monthInput.split('-').map(Number);
-      const monthContracts = contracts.filter(c => {
-        const d = new Date(c.date + 'T00:00:00');
-        return d.getFullYear() === year && (d.getMonth() + 1) === month;
-      });
-      
-      const total = monthContracts.reduce((sum, c) => sum + c.remuneration, 0);
-      const count = monthContracts.length;
-      const avg = count > 0 ? (total / count).toFixed(2) : 0;
-      
-      document.getElementById('monthKpis').innerHTML = `
-        <div class="kpi">
-          <div class="kpi-label">Contrats</div>
-          <div class="kpi-value">${count}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Total</div>
-          <div class="kpi-value">${total}€</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Moyenne</div>
-          <div class="kpi-value">${avg}€</div>
-        </div>
-      `;
-      
-      const byType = {};
-      monthContracts.forEach(c => {
-        const key = `${c.provider} - ${c.type}`;
-        if (!byType[key]) byType[key] = { count: 0, total: 0 };
-        byType[key].count++;
-        byType[key].total += c.remuneration;
-      });
-      
-      document.getElementById('monthStats').innerHTML = Object.keys(byType).map(key => {
-        const data = byType[key];
-        const percent = total > 0 ? (data.total / total * 100).toFixed(1) : 0;
-        return `
-          <div class="stat-bar">
-            <div class="stat-bar-header">
-              <span class="stat-bar-title">${key} (${data.count})</span>
-              <span class="stat-bar-value">${data.total}€</span>
-            </div>
-            <div class="stat-bar-progress">
-              <div class="stat-bar-fill" style="width: ${percent}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    document.getElementById('btnCurrentMonth').addEventListener('click', function() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      document.getElementById('monthFilter').value = `${year}-${month}`;
-      renderMonthView();
-    });
-
-    document.getElementById('monthFilter').addEventListener('change', renderMonthView);
-
-    // ========== STATS VIEW ==========
-    function renderStatsView() {
-      const total = contracts.reduce((sum, c) => sum + c.remuneration, 0);
-      const count = contracts.length;
-      const avg = count > 0 ? (total / count).toFixed(2) : 0;
-      
-      const byProvider = {};
-      contracts.forEach(c => {
-        if (!byProvider[c.provider]) byProvider[c.provider] = { count: 0, total: 0 };
-        byProvider[c.provider].count++;
-        byProvider[c.provider].total += c.remuneration;
-      });
-      
-      document.getElementById('globalKpis').innerHTML = `
-        <div class="kpi">
-          <div class="kpi-label">Total Contrats</div>
-          <div class="kpi-value">${count}</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Rémunération Totale</div>
-          <div class="kpi-value">${total}€</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Moyenne</div>
-          <div class="kpi-value">${avg}€</div>
-        </div>
-      `;
-      
-      document.getElementById('globalStats').innerHTML = Object.keys(byProvider).map(provider => {
-        const data = byProvider[provider];
-        const percent = total > 0 ? (data.total / total * 100).toFixed(1) : 0;
-        return `
-          <div class="stat-bar">
-            <div class="stat-bar-header">
-              <span class="stat-bar-title">${provider} (${data.count} contrats)</span>
-              <span class="stat-bar-value">${data.total}€</span>
-            </div>
-            <div class="stat-bar-progress">
-              <div class="stat-bar-fill" style="width: ${percent}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // ========== EXPORT VIEW ==========
-    function renderExportView() {
-      const alert = document.getElementById('exportAlert');
-      alert.textContent = `${contracts.length} contrat(s) prêt(s) à être exporté(s)`;
-      alert.classList.add('show');
-      
-      const preview = document.getElementById('exportPreview');
-      preview.textContent = JSON.stringify(contracts, null, 2);
-      document.getElementById('exportPreviewContainer').style.display = 'block';
-    }
-
-    document.getElementById('btnExportJson').addEventListener('click', function() {
-      const dataStr = JSON.stringify(contracts, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `remuneration_${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Export réussi !', 'success');
-    });
-
-    document.getElementById('btnImportJson').addEventListener('click', function() {
-      document.getElementById('importFileInput').click();
-    });
-
-    document.getElementById('importFileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        try {
-          const imported = JSON.parse(event.target.result);
-          if (Array.isArray(imported)) {
-            contracts = imported;
-            saveContracts();
-            renderContractsList();
-            showToast('Import réussi !', 'success');
-          } else {
-            showToast('Format JSON invalide', 'error');
-          }
-        } catch (err) {
-          showToast('Erreur lors de l\'import', 'error');
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = '';
-    });
-
-    // ========== INIT ==========
-    function init() {
-      initTheme();
-      loadContracts();
-      renderContractsList();
-      
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('contractDate').value = today;
-      document.getElementById('dayFilter').value = today;
-      
-      const now = new Date();
-      const wk = getWeekNumber(now);
-      document.getElementById('weekFilter').value = `${wk.year}-W${String(wk.week).padStart(2, '0')}`;
-      
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      document.getElementById('monthFilter').value = `${year}-${month}`;
-      
-      document.getElementById('currentDate').textContent = now.toLocaleDateString('fr-FR');
-    }
-
-    init();
-  </script>
-</body>
-</html>      <div class="form-row">
           <div class="form-group">
             <label for="searchName">🔍 Recherche (nom ou référence)</label>
             <input type="text" id="searchName" placeholder="Rechercher...">
@@ -1510,7 +815,7 @@
       </div>
     </div>
 
-    <!-- Tab: Jour -->
+    <!-- Tab Jour -->
     <div id="tab-jour" class="tab-content">
       <div class="card">
         <h2>📅 Résumé du jour</h2>
@@ -1534,7 +839,7 @@
       </div>
     </div>
 
-    <!-- Tab: Semaine -->
+    <!-- Tab Semaine -->
     <div id="tab-semaine" class="tab-content">
       <div class="card">
         <h2>📊 Résumé de la semaine</h2>
@@ -1569,7 +874,7 @@
       </div>
     </div>
 
-    <!-- Tab: Mois -->
+    <!-- Tab Mois -->
     <div id="tab-mois" class="tab-content">
       <div class="card">
         <h2>📈 Résumé du mois</h2>
@@ -1605,7 +910,7 @@
       </div>
     </div>
 
-    <!-- Tab: Stats -->
+    <!-- Tab Stats -->
     <div id="tab-stats" class="tab-content">
       <div class="card">
         <h2>📉 Statistiques globales</h2>
@@ -1623,7 +928,7 @@
       </div>
     </div>
 
-    <!-- Tab: Export -->
+    <!-- Tab Export -->
     <div id="tab-export" class="tab-content">
       <div class="card">
         <h2>📄 Export texte Semaine</h2>
@@ -1780,8 +1085,7 @@
       const contractIagType = $('#contractIagType');
       const formError = $('#formError');
       const btnClearForm = $('#btnClearForm');
-      const contractIagRef = $('contractIagRef');
-
+      const contractIagRef = $('#contractIagRef');
 
       const powerGroup = $('#powerGroup');
       const consoGroup = $('#consoGroup');
@@ -2051,80 +1355,84 @@
       }
 
       // ========== Form Management ==========
+      function populateTypeOptions(provider) {
+        contractType.innerHTML = '<option value="">-- Choisir --</option>';
+
+        const types = CONTRACT_TYPES[provider];
+        if (!types) return;
+
+        const energyGroup = document.createElement('optgroup');
+        energyGroup.label = 'Énergie';
+        types.ENERGY.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.value;
+          opt.textContent = t.label;
+          energyGroup.appendChild(opt);
+        });
+        contractType.appendChild(energyGroup);
+
+        if (types.IAG && types.IAG.length) {
+          const iagOptGroup = document.createElement('optgroup');
+          iagOptGroup.label = 'IAG';
+          types.IAG.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.value;
+            opt.textContent = t.label;
+            iagOptGroup.appendChild(opt);
+          });
+          contractType.appendChild(iagOptGroup);
+        }
+      }
+
       function updateFormFields() {
         const provider = contractProvider.value;
         const type = contractType.value;
 
-        // Reset visibility
         powerGroup.style.display = 'none';
         consoGroup.style.display = 'none';
         optionsGroup.style.display = 'none';
         iagGroup.style.display = 'none';
 
-        if (!provider) return;
-
-        // Populate type dropdown (REMPLACE ton bloc actuel par celui-ci)
-        contractType.innerHTML = '<option value="">-- Choisir --</option>';
-
-        const types = CONTRACTTYPES[provider];
-        if (types) {
-          const energyGroup = document.createElement('optgroup');
-          energyGroup.label = 'Énergie';
-          types.ENERGY.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.value;       // IMPORTANT
-            opt.textContent = t.label; // Affichage
-            energyGroup.appendChild(opt);
-          });
-          contractType.appendChild(energyGroup);
-
-          if (types.IAG && types.IAG.length) {
-            const iagOptGroup = document.createElement('optgroup');
-            iagOptGroup.label = 'IAG';
-            types.IAG.forEach(t => {
-              const opt = document.createElement('option');
-              opt.value = t.value;       // IMPORTANT
-              opt.textContent = t.label;
-              iagOptGroup.appendChild(opt);
-            });
-            contractType.appendChild(iagOptGroup);
-          }
+        if (!provider) {
+          populateTypeOptions('');
+          return;
         }
 
+        // Only repopulate when provider changes (avoid resetting type unexpectedly)
+        if (contractType.dataset.provider !== provider) {
+          populateTypeOptions(provider);
+          contractType.dataset.provider = provider;
+        }
 
         if (!type) return;
 
-        // Show relevant fields based on type
         if (type === 'DUAL') {
           powerGroup.style.display = '';
           consoGroup.style.display = '';
           optionsGroup.style.display = '';
-          
-          // Populate power
-          contractPower.innerHTML = DUAL_POWER.map(p => 
-            `<option value="${p}">${p} kVA</option>`
-          ).join('');
 
-          // Populate conso
-          contractConso.innerHTML = DUAL_CONSO.map(c => 
-            `<option value="${c}">${c} MWh</option>`
-          ).join('');
-        } else if (['ELEC_3', 'ELEC_6', 'ELEC_9', 'ELEC_12'].includes(type)) {
+          contractPower.innerHTML = DUAL_POWER.map(p => `<option value="${p}">${p} kVA</option>`).join('');
+          contractConso.innerHTML = DUAL_CONSO.map(c => `<option value="${c}">${c} MWh</option>`).join('');
+        } else if (['ELEC_3', 'ELEC_6', 'ELEC_9', 'ELEC_12', 'PRIMEO_ELEC_6', 'PRIMEO_ELEC_9', 'PRIMEO_ELEC_12'].includes(type)) {
           optionsGroup.style.display = '';
         }
 
-        // Show IAG selector for energy contracts
+        // Show IAG selector only for energy (not for IAG contracts themselves)
         if (!type.startsWith('IAG_')) {
           iagGroup.style.display = '';
         }
       }
 
-      contractProvider.addEventListener('change', updateFormFields);
+      contractProvider.addEventListener('change', () => {
+        contractType.dataset.provider = '';
+        updateFormFields();
+      });
       contractType.addEventListener('change', updateFormFields);
 
       btnClearForm.addEventListener('click', () => {
         addContractForm.reset();
         contractDate.value = todayStr();
+        contractType.dataset.provider = '';
         updateFormFields();
         clearError();
       });
@@ -2170,33 +1478,31 @@
           }
           contract.axa = contractAxa.checked;
           contract.digitalisation = contractDigi.checked;
-        } else if (['ELEC_3', 'ELEC_6', 'ELEC_9', 'ELEC_12'].includes(type)) {
+        } else if (['ELEC_3', 'ELEC_6', 'ELEC_9', 'ELEC_12', 'PRIMEO_ELEC_6', 'PRIMEO_ELEC_9', 'PRIMEO_ELEC_12'].includes(type)) {
           contract.axa = contractAxa.checked;
           contract.digitalisation = contractDigi.checked;
         }
 
-        if (!type.startsWith('IAG_') && iagTypeSelected && iagTypeSelected !== 'Aucun' && !iagReferenceInput) {
-          showError("Veuillez saisir la référence IAG.");
+        // IAG reference: required only when you tag an energy contract with IAG type
+        if (!type.startsWith('IAG_') && iagTypeSelected && !iagReferenceInput) {
+          showError('Veuillez saisir la référence IAG.');
           return;
         }
 
-        if (!type.startsWith('IAG_') && iagTypeSelected && iagTypeSelected !== 'Aucun') {
+        if (!type.startsWith('IAG_') && iagTypeSelected) {
           contract.iagType = iagTypeSelected;
           contract.iagReference = iagReferenceInput ? iagReferenceInput : null;
-        } else {
-          contract.iagType = null;
-          contract.iagReference = null;
         }
-
 
         try {
           await saveContract(contract);
           contracts.push(contract);
           contracts.sort((a, b) => b.date.localeCompare(a.date));
-          
+
           showToast('✅ Contrat ajouté avec succès', 'success');
           addContractForm.reset();
           contractDate.value = todayStr();
+          contractType.dataset.provider = '';
           updateFormFields();
           renderAll();
         } catch (err) {
@@ -2218,13 +1524,15 @@
 
         const meta = document.createElement('div');
         meta.className = 'list-item-meta';
-        
+
         let metaText = `📅 ${formatDate(contract.date)} • 🔖 ${contract.reference} • `;
-        
+
         if (contract.type === 'DUAL') {
           metaText += `Dual ${contract.power}/${contract.conso}`;
         } else if (contract.type.startsWith('IAG_')) {
           metaText += `IAG ${contract.type.split('_')[1]}`;
+        } else if (contract.type.startsWith('PRIMEO_')) {
+          metaText += contract.type.replace(/PRIMEO_/, 'Primeo ').replace(/_/g, ' ');
         } else {
           metaText += contract.type.replace('_', ' ');
         }
@@ -2232,6 +1540,7 @@
         if (contract.axa) metaText += ' • AXA';
         if (contract.digitalisation) metaText += ' • Digi';
         if (contract.iagType) metaText += ` • IAG ${contract.iagType}`;
+        if (contract.iagReference) metaText += ` • Ref IAG ${contract.iagReference}`;
 
         meta.textContent = metaText;
 
@@ -2301,31 +1610,12 @@
         const stats = computeStats(dayContracts);
 
         dayKpis.innerHTML = `
-          <div class="kpi">
-            <div class="kpi-label">Total contrats</div>
-            <div class="kpi-value">${stats.total}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Énergie</div>
-            <div class="kpi-value">${stats.energy}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">IAG</div>
-            <div class="kpi-value">${stats.iag}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Plenitude</div>
-            <div class="kpi-value">${stats.plenitude}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Primeo</div>
-            <div class="kpi-value">${stats.primeo}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Total €</div>
-            <div class="kpi-value">${formatEuro(stats.totalAmount)}</div>
-            <div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div>
-          </div>
+          <div class="kpi"><div class="kpi-label">Total contrats</div><div class="kpi-value">${stats.total}</div></div>
+          <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
+          <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
+          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
+          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
+          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div><div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div></div>
         `;
 
         dayNote.textContent = `Date analysée : ${formatDate(date)}`;
@@ -2339,10 +1629,7 @@
         dayContractsList.style.display = '';
         dayContractsEmpty.style.display = 'none';
         dayContractsList.innerHTML = '';
-
-        dayContracts.forEach(c => {
-          dayContractsList.appendChild(renderContractItem(c));
-        });
+        dayContracts.forEach(c => dayContractsList.appendChild(renderContractItem(c)));
       }
 
       function renderWeek() {
@@ -2355,146 +1642,77 @@
         weekNumber.textContent = `Semaine ${week.week}`;
 
         weekKpis.innerHTML = `
-          <div class="kpi">
-            <div class="kpi-label">Total contrats</div>
-            <div class="kpi-value">${stats.total}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Énergie</div>
-            <div class="kpi-value">${stats.energy}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">IAG</div>
-            <div class="kpi-value">${stats.iag}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Plenitude</div>
-            <div class="kpi-value">${stats.plenitude}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Primeo</div>
-            <div class="kpi-value">${stats.primeo}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Total €</div>
-            <div class="kpi-value">${formatEuro(stats.totalAmount)}</div>
-            <div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div>
-          </div>
+          <div class="kpi"><div class="kpi-label">Total contrats</div><div class="kpi-value">${stats.total}</div></div>
+          <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
+          <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
+          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
+          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
+          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div><div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div></div>
         `;
 
-        // Stats by type
         weekStats.innerHTML = '';
-        Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+        Object.entries(stats.byType).sort((a,b) => b[1]-a[1]).forEach(([type, count]) => {
           const bar = document.createElement('div');
           bar.className = 'stat-bar';
           const pct = stats.total > 0 ? (count / stats.total * 100) : 0;
           bar.innerHTML = `
-            <div class="stat-bar-header">
-              <div class="stat-bar-title">${type.replace(/_/g, ' ')}</div>
-              <div class="stat-bar-value">${count}</div>
-            </div>
-            <div class="stat-bar-progress">
-              <div class="stat-bar-fill" style="width: ${pct}%"></div>
-            </div>
+            <div class="stat-bar-header"><div class="stat-bar-title">${type.replace(/_/g,' ')}</div><div class="stat-bar-value">${count}</div></div>
+            <div class="stat-bar-progress"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
           `;
           weekStats.appendChild(bar);
         });
 
+        weekContractsList.innerHTML = '';
         if (weekContracts.length === 0) {
           weekContractsList.style.display = 'none';
           weekContractsEmpty.style.display = '';
           return;
         }
-
         weekContractsList.style.display = '';
         weekContractsEmpty.style.display = 'none';
-        weekContractsList.innerHTML = '';
-
-        weekContracts.forEach(c => {
-          weekContractsList.appendChild(renderContractItem(c));
-        });
+        weekContracts.forEach(c => weekContractsList.appendChild(renderContractItem(c)));
       }
 
       function renderMonth() {
         const date = monthDate.value;
-        const monthStr = date.slice(0, 7);
+        const monthStr = date.slice(0,7);
         const monthContracts = contracts.filter(c => c.date.startsWith(monthStr));
         const stats = computeStats(monthContracts);
 
         monthLabel.textContent = getMonthLabel(date);
 
         monthKpis.innerHTML = `
-          <div class="kpi">
-            <div class="kpi-label">Total contrats</div>
-            <div class="kpi-value">${stats.total}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Énergie</div>
-            <div class="kpi-value">${stats.energy}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">IAG</div>
-            <div class="kpi-value">${stats.iag}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">% IAG</div>
-            <div class="kpi-value">${stats.total > 0 ? ((stats.iag / stats.total) * 100).toFixed(1) : 0}%</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Plenitude</div>
-            <div class="kpi-value">${stats.plenitude}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Primeo</div>
-            <div class="kpi-value">${stats.primeo}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Tarif IAG</div>
-            <div class="kpi-value">${formatEuro(getIAGTarif(stats.iag))}</div>
-            <div class="kpi-sub">Par IAG</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Total €</div>
-            <div class="kpi-value">${formatEuro(stats.totalAmount)}</div>
-            <div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div>
-          </div>
+          <div class="kpi"><div class="kpi-label">Total contrats</div><div class="kpi-value">${stats.total}</div></div>
+          <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
+          <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
+          <div class="kpi"><div class="kpi-label">% IAG</div><div class="kpi-value">${stats.total > 0 ? ((stats.iag / stats.total)*100).toFixed(1):0}%</div></div>
+          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
+          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
+          <div class="kpi"><div class="kpi-label">Tarif IAG</div><div class="kpi-value">${formatEuro(getIAGTarif(stats.iag))}</div><div class="kpi-sub">Par IAG</div></div>
+          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div><div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div></div>
         `;
 
-        // Stats by type
         monthStats.innerHTML = '';
-        Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+        Object.entries(stats.byType).sort((a,b) => b[1]-a[1]).forEach(([type, count]) => {
           const bar = document.createElement('div');
           bar.className = 'stat-bar';
           const pct = stats.total > 0 ? (count / stats.total * 100) : 0;
           bar.innerHTML = `
-            <div class="stat-bar-header">
-              <div class="stat-bar-title">${type.replace(/_/g, ' ')}</div>
-              <div class="stat-bar-value">${count}</div>
-            </div>
-            <div class="stat-bar-progress">
-              <div class="stat-bar-fill" style="width: ${pct}%"></div>
-            </div>
+            <div class="stat-bar-header"><div class="stat-bar-title">${type.replace(/_/g,' ')}</div><div class="stat-bar-value">${count}</div></div>
+            <div class="stat-bar-progress"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
           `;
           monthStats.appendChild(bar);
         });
 
-        // Goal progress
         const goal = parseInt(monthlyGoal.value) || 0;
         if (goal > 0) {
           const pct = Math.min(100, (stats.total / goal) * 100);
           goalProgress.innerHTML = `
             <div class="stat-bar">
-              <div class="stat-bar-header">
-                <div class="stat-bar-title">Progression objectif</div>
-                <div class="stat-bar-value">${stats.total} / ${goal}</div>
-              </div>
-              <div class="stat-bar-progress">
-                <div class="stat-bar-fill" style="width: ${pct}%"></div>
-              </div>
+              <div class="stat-bar-header"><div class="stat-bar-title">Progression objectif</div><div class="stat-bar-value">${stats.total} / ${goal}</div></div>
+              <div class="stat-bar-progress"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
             </div>
-            <p style="margin-top:12px; font-size:13px; color:var(--muted);">
-              ${pct.toFixed(1)}% de l'objectif atteint
-            </p>
+            <p style="margin-top:12px; font-size:13px; color:var(--muted);">${pct.toFixed(1)}% de l'objectif atteint</p>
           `;
         } else {
           goalProgress.innerHTML = '<p style="color:var(--muted); font-size:13px;">Définissez un objectif mensuel ci-dessus.</p>';
@@ -2504,73 +1722,39 @@
       function renderStats() {
         const stats = computeStats(contracts);
 
-        // Global KPIs
         globalKpis.innerHTML = `
-          <div class="kpi">
-            <div class="kpi-label">Total contrats</div>
-            <div class="kpi-value">${stats.total}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Énergie</div>
-            <div class="kpi-value">${stats.energy}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">IAG</div>
-            <div class="kpi-value">${stats.iag}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Plenitude</div>
-            <div class="kpi-value">${stats.plenitude}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Primeo</div>
-            <div class="kpi-value">${stats.primeo}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Total €</div>
-            <div class="kpi-value">${formatEuro(stats.totalAmount)}</div>
-          </div>
+          <div class="kpi"><div class="kpi-label">Total contrats</div><div class="kpi-value">${stats.total}</div></div>
+          <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
+          <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
+          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
+          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
+          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div></div>
         `;
 
-        // Records
         const byDay = {};
         const byMonth = {};
         contracts.forEach(c => {
           byDay[c.date] = (byDay[c.date] || 0) + 1;
-          const month = c.date.slice(0, 7);
+          const month = c.date.slice(0,7);
           byMonth[month] = (byMonth[month] || 0) + 1;
         });
 
-        const bestDay = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0] || ['--', 0];
-        const bestMonth = Object.entries(byMonth).sort((a, b) => b[1] - a[1])[0] || ['--', 0];
+        const bestDay = Object.entries(byDay).sort((a,b)=>b[1]-a[1])[0] || ['--',0];
+        const bestMonth = Object.entries(byMonth).sort((a,b)=>b[1]-a[1])[0] || ['--',0];
 
         recordsKpis.innerHTML = `
-          <div class="kpi">
-            <div class="kpi-label">Meilleur jour</div>
-            <div class="kpi-value">${bestDay[1]}</div>
-            <div class="kpi-sub">${bestDay[0] !== '--' ? formatDate(bestDay[0]) : '--'}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Meilleur mois</div>
-            <div class="kpi-value">${bestMonth[1]}</div>
-            <div class="kpi-sub">${bestMonth[0] !== '--' ? getMonthLabel(bestMonth[0] + '-01') : '--'}</div>
-          </div>
+          <div class="kpi"><div class="kpi-label">Meilleur jour</div><div class="kpi-value">${bestDay[1]}</div><div class="kpi-sub">${bestDay[0] !== '--' ? formatDate(bestDay[0]) : '--'}</div></div>
+          <div class="kpi"><div class="kpi-label">Meilleur mois</div><div class="kpi-value">${bestMonth[1]}</div><div class="kpi-sub">${bestMonth[0] !== '--' ? getMonthLabel(bestMonth[0] + '-01') : '--'}</div></div>
         `;
 
-        // Global stats by type
         globalStats.innerHTML = '';
-        Object.entries(stats.byType).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+        Object.entries(stats.byType).sort((a,b)=>b[1]-a[1]).forEach(([type, count]) => {
           const bar = document.createElement('div');
           bar.className = 'stat-bar';
           const pct = stats.total > 0 ? (count / stats.total * 100) : 0;
           bar.innerHTML = `
-            <div class="stat-bar-header">
-              <div class="stat-bar-title">${type.replace(/_/g, ' ')}</div>
-              <div class="stat-bar-value">${count}</div>
-            </div>
-            <div class="stat-bar-progress">
-              <div class="stat-bar-fill" style="width: ${pct}%"></div>
-            </div>
+            <div class="stat-bar-header"><div class="stat-bar-title">${type.replace(/_/g,' ')}</div><div class="stat-bar-value">${count}</div></div>
+            <div class="stat-bar-progress"><div class="stat-bar-fill" style="width:${pct}%"></div></div>
           `;
           globalStats.appendChild(bar);
         });
@@ -2578,394 +1762,20 @@
 
       function renderAll() {
         renderContractsList();
-        
         if (currentTab === 'jour') renderDay();
         if (currentTab === 'semaine') renderWeek();
         if (currentTab === 'mois') renderMonth();
         if (currentTab === 'stats') renderStats();
       }
 
-      // ========== Export Text ==========
-      function formatContractForExport(contract) {
-        let result = '';
-        
-        if (contract.type === 'DUAL') {
-          const powerMap = { '3': '3', '6': '6', '9': '6+', '12': '12' };
-          const consoMap = { '1-6': '6', '6-13': '13', '13+': '13+' };
-          const p = powerMap[contract.power] || contract.power;
-          const c = consoMap[contract.conso] || contract.conso;
-          result = `Dual ${p}-${c} ( ${contract.name} ) ${contract.reference}`;
-        } else if (contract.type.startsWith('ELEC_')) {
-          const kva = contract.type.split('_')[1];
-          result = `Elec ${kva} ( ${contract.name} ) ${contract.reference}`;
-        } else if (contract.type.startsWith('PRIMEO_')) {
-          const kva = contract.type.split('_')[2];
-          result = `Elec ${kva} ( ${contract.name} ) ${contract.reference}`;
-        } else if (contract.type === 'IAG_PJI') {
-          result = `PJI ( ${contract.reference}, ${contract.name} )`;
-        } else if (contract.type === 'IAG_ELA') {
-          result = `ELA ( ${contract.reference}, ${contract.name} )`;
-        }
-
-        return result;
-      }
-
-      function generateWeekExport(dateStr) {
-        const week = getWeekRange(dateStr);
-        const weekContracts = getContractsByPeriod(contracts, week.start, week.end);
-        
-        // Compteurs
-        const counters = {
-          dual36: 0, dual66: 0, dual66plus: 0, dual613: 0,
-          elec3: 0, elec6: 0, elec9: 0, elec12: 0,
-          primeoElec6: 0, primeoElec9: 0,
-          iag: 0
-        };
-
-        const plenitudeList = [];
-        const primeoList = [];
-        const pjiList = [];
-        const elaList = [];
-
-        weekContracts.forEach(c => {
-          if (c.type === 'DUAL') {
-            const key = `${c.power}_${c.conso}`;
-            if (key === '3_1-6') counters.dual36++;
-            else if (key === '6_1-6') counters.dual66++;
-            else if (key === '6_6-13' || key === '9_1-6') counters.dual66plus++;
-            else if (key === '6_13+' || key === '9_6-13' || key === '12_1-6') counters.dual613++;
-            
-            if (c.provider === 'PLENITUDE') {
-              plenitudeList.push(formatContractForExport(c));
-            }
-          } else if (c.type.startsWith('ELEC_')) {
-            const kva = c.type.split('_')[1];
-            if (kva === '3') counters.elec3++;
-            else if (kva === '6') counters.elec6++;
-            else if (kva === '9') counters.elec9++;
-            else if (kva === '12') counters.elec12++;
-            
-            if (c.provider === 'PLENITUDE') {
-              plenitudeList.push(formatContractForExport(c));
-            }
-          } else if (c.type.startsWith('PRIMEO_')) {
-            const kva = c.type.split('_')[2];
-            if (kva === '6') { counters.primeoElec6++; counters.elec6++; }
-            else if (kva === '9') { counters.primeoElec9++; counters.elec9++; }
-            else if (kva === '12') counters.elec12++;
-            
-            primeoList.push(formatContractForExport(c));
-          } else if (c.type === 'IAG_PJI') {
-            counters.iag++;
-            pjiList.push(formatContractForExport(c));
-          } else if (c.type === 'IAG_ELA') {
-            counters.iag++;
-            elaList.push(formatContractForExport(c));
-          }
-        });
-
-        // Tri des listes
-        const sortOrder = ['Elec 3', 'Elec 6', 'Elec 9', 'Elec 12', 'Dual 3-6', 'Dual 6-6', 'Dual 6+-', 'Dual 6-13'];
-        plenitudeList.sort((a, b) => {
-          const aPrefix = a.split('(')[0].trim();
-          const bPrefix = b.split('(')[0].trim();
-          const aIdx = sortOrder.findIndex(s => aPrefix.startsWith(s));
-          const bIdx = sortOrder.findIndex(s => bPrefix.startsWith(s));
-          return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
-        });
-
-        primeoList.sort((a, b) => {
-          const aNum = parseInt(a.match(/\d+/)?.[0] || '0');
-          const bNum = parseInt(b.match(/\d+/)?.[0] || '0');
-          return aNum - bNum;
-        });
-
-        const stats = computeStats(weekContracts);
-
-        let output = `Production semaine ${week.week}\n\n`;
-        
-        if (counters.dual36 > 0) output += `Dual 3-6 : ${counters.dual36}\n`;
-        if (counters.dual66 > 0) output += `Dual 6-6 : ${counters.dual66}\n`;
-        if (counters.dual66plus > 0) output += `Dual 6+6 : ${counters.dual66plus}\n`;
-        if (counters.dual613 > 0) output += `Dual 6+13 : ${counters.dual613}\n`;
-        
-        output += '\n';
-        
-        if (counters.elec3 > 0) output += `Elec 3 : ${counters.elec3}\n`;
-        if (counters.elec6 > 0) output += `Elec 6 : ${counters.elec6}\n`;
-        if (counters.elec9 > 0) output += `Elec 9 : ${counters.elec9}\n`;
-        if (counters.elec12 > 0) output += `Elec 12 : ${counters.elec12}\n`;
-        
-        const totalPrimeo = counters.primeoElec6 + counters.primeoElec9;
-        output += `Primeo\nElec 6/9 : ${totalPrimeo}\n`;
-        output += `IAG : ${counters.iag}\n\n`;
-        
-        output += `Objectif :\nTotal : ${stats.total}\n`;
-        output += `Argent : ${formatEuro(stats.totalAmount)}\n\n`;
-        
-        output += `Plenitude\n`;
-        plenitudeList.forEach(line => output += line + '\n');
-        
-        output += `\nPrimeo\n`;
-        primeoList.forEach(line => output += line + '\n');
-        
-        if (pjiList.length > 0) {
-          output += `\nPJI ( ${pjiList.length} )\n`;
-          pjiList.forEach(line => output += line + '\n');
-        }
-        
-        if (elaList.length > 0) {
-          output += `\nELA ( ${elaList.length} )\n`;
-          elaList.forEach(line => output += line + '\n');
-        }
-
-        return output;
-      }
-
-      function generateMonthExport(dateStr) {
-        const monthStr = dateStr.slice(0, 7);
-        const monthContracts = contracts.filter(c => c.date.startsWith(monthStr));
-        
-        // Same logic as week but for entire month
-        const counters = {
-          dual36: 0, dual66: 0, dual66plus: 0, dual613: 0,
-          elec3: 0, elec6: 0, elec9: 0, elec12: 0,
-          primeoElec6: 0, primeoElec9: 0,
-          iag: 0
-        };
-
-        const plenitudeList = [];
-        const primeoList = [];
-        const pjiList = [];
-        const elaList = [];
-
-        monthContracts.forEach(c => {
-          if (c.type === 'DUAL') {
-            const key = `${c.power}_${c.conso}`;
-            if (key === '3_1-6') counters.dual36++;
-            else if (key === '6_1-6') counters.dual66++;
-            else if (key === '6_6-13' || key === '9_1-6') counters.dual66plus++;
-            else if (key === '6_13+' || key === '9_6-13' || key === '12_1-6') counters.dual613++;
-            
-            if (c.provider === 'PLENITUDE') {
-              plenitudeList.push(formatContractForExport(c));
-            }
-          } else if (c.type.startsWith('ELEC_')) {
-            const kva = c.type.split('_')[1];
-            if (kva === '3') counters.elec3++;
-            else if (kva === '6') counters.elec6++;
-            else if (kva === '9') counters.elec9++;
-            else if (kva === '12') counters.elec12++;
-            
-            if (c.provider === 'PLENITUDE') {
-              plenitudeList.push(formatContractForExport(c));
-            }
-          } else if (c.type.startsWith('PRIMEO_')) {
-            const kva = c.type.split('_')[2];
-            if (kva === '6') { counters.primeoElec6++; counters.elec6++; }
-            else if (kva === '9') { counters.primeoElec9++; counters.elec9++; }
-            else if (kva === '12') counters.elec12++;
-            
-            primeoList.push(formatContractForExport(c));
-          } else if (c.type === 'IAG_PJI') {
-            counters.iag++;
-            pjiList.push(formatContractForExport(c));
-          } else if (c.type === 'IAG_ELA') {
-            counters.iag++;
-            elaList.push(formatContractForExport(c));
-          }
-        });
-
-        const sortOrder = ['Elec 3', 'Elec 6', 'Elec 9', 'Elec 12', 'Dual 3-6', 'Dual 6-6', 'Dual 6+-', 'Dual 6-13'];
-        plenitudeList.sort((a, b) => {
-          const aPrefix = a.split('(')[0].trim();
-          const bPrefix = b.split('(')[0].trim();
-          const aIdx = sortOrder.findIndex(s => aPrefix.startsWith(s));
-          const bIdx = sortOrder.findIndex(s => bPrefix.startsWith(s));
-          return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
-        });
-
-        primeoList.sort((a, b) => {
-          const aNum = parseInt(a.match(/\d+/)?.[0] || '0');
-          const bNum = parseInt(b.match(/\d+/)?.[0] || '0');
-          return aNum - bNum;
-        });
-
-        const stats = computeStats(monthContracts);
-
-        let output = `Production ${getMonthLabel(dateStr)}\n\n`;
-        
-        if (counters.dual36 > 0) output += `Dual 3-6 : ${counters.dual36}\n`;
-        if (counters.dual66 > 0) output += `Dual 6-6 : ${counters.dual66}\n`;
-        if (counters.dual66plus > 0) output += `Dual 6+6 : ${counters.dual66plus}\n`;
-        if (counters.dual613 > 0) output += `Dual 6+13 : ${counters.dual613}\n`;
-        
-        output += '\n';
-        
-        if (counters.elec3 > 0) output += `Elec 3 : ${counters.elec3}\n`;
-        if (counters.elec6 > 0) output += `Elec 6 : ${counters.elec6}\n`;
-        if (counters.elec9 > 0) output += `Elec 9 : ${counters.elec9}\n`;
-        if (counters.elec12 > 0) output += `Elec 12 : ${counters.elec12}\n`;
-        
-        const totalPrimeo = counters.primeoElec6 + counters.primeoElec9;
-        output += `Primeo\nElec 6/9 : ${totalPrimeo}\n`;
-        output += `IAG : ${counters.iag}\n\n`;
-        
-        output += `Objectif :\nTotal : ${stats.total}\n`;
-        output += `Argent : ${formatEuro(stats.totalAmount)}\n\n`;
-        
-        output += `Plenitude\n`;
-        plenitudeList.forEach(line => output += line + '\n');
-        
-        output += `\nPrimeo\n`;
-        primeoList.forEach(line => output += line + '\n');
-        
-        if (pjiList.length > 0) {
-          output += `\nPJI ( ${pjiList.length} )\n`;
-          pjiList.forEach(line => output += line + '\n');
-        }
-        
-        if (elaList.length > 0) {
-          output += `\nELA ( ${elaList.length} )\n`;
-          elaList.forEach(line => output += line + '\n');
-        }
-
-        return output;
-      }
-
-      btnGenerateWeek.addEventListener('click', () => {
-        const output = generateWeekExport(exportWeekDate.value);
-        weekExportPreview.textContent = output;
-        showToast('Export semaine généré', 'success');
-      });
-
-      btnGenerateMonth.addEventListener('click', () => {
-        const output = generateMonthExport(exportMonthDate.value);
-        monthExportPreview.textContent = output;
-        showToast('Export mois généré', 'success');
-      });
-
-      btnCopyWeek.addEventListener('click', () => {
-        const text = weekExportPreview.textContent;
-        if (!text) {
-          showToast('Générez d\'abord l\'export', 'warning');
-          return;
-        }
-        navigator.clipboard.writeText(text).then(() => {
-          showToast('✅ Copié dans le presse-papier', 'success');
-        });
-      });
-
-      btnCopyMonth.addEventListener('click', () => {
-        const text = monthExportPreview.textContent;
-        if (!text) {
-          showToast('Générez d\'abord l\'export', 'warning');
-          return;
-        }
-        navigator.clipboard.writeText(text).then(() => {
-          showToast('✅ Copié dans le presse-papier', 'success');
-        });
-      });
-
-      // ========== JSON/CSV Export ==========
-      btnExportJSON.addEventListener('click', () => {
-        const data = {
-          version: 2,
-          exportDate: new Date().toISOString(),
-          contracts: contracts
-        };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `remuneration-pro-${todayStr()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('✅ Export JSON téléchargé', 'success');
-        localStorage.setItem(STORAGE_KEYS.lastBackup, new Date().toISOString());
-      });
-
-      btnExportCSV.addEventListener('click', () => {
-        let csv = 'Date;Nom;Référence;Fournisseur;Type;Puissance;Consommation;AXA;Digitalisation;IAG Type;Montant\n';
-        contracts.forEach(c => {
-          csv += `${c.date};${c.name};${c.reference};${c.provider};${c.type};`;
-          csv += `${c.power || ''};${c.conso || ''};${c.axa ? 'Oui' : 'Non'};${c.digitalisation ? 'Oui' : 'Non'};`;
-          csv += `${c.iagType || ''};${calculateAmount(c).toFixed(2)}\n`;
-        });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `remuneration-pro-${todayStr()}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('✅ Export CSV téléchargé', 'success');
-      });
-
-      btnImportJSON.addEventListener('click', () => {
-        importFile.click();
-      });
-
-      importFile.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-          const text = await file.text();
-          const data = JSON.parse(text);
-          
-          if (!data.contracts || !Array.isArray(data.contracts)) {
-            throw new Error('Format JSON invalide');
-          }
-
-          if (!confirm(`Importer ${data.contracts.length} contrats ?\n\nCela remplacera toutes les données actuelles.`)) {
-            return;
-          }
-
-          await clearAllContracts();
-          
-          for (const c of data.contracts) {
-            await saveContract(c);
-          }
-
-          contracts = data.contracts;
-          contracts.sort((a, b) => b.date.localeCompare(a.date));
-          
-          showToast(`✅ ${contracts.length} contrats importés`, 'success');
-          renderAll();
-        } catch (err) {
-          alert('Erreur lors de l\'import : ' + err.message);
-        }
-
-        importFile.value = '';
-      });
-
-      btnClearAll.addEventListener('click', async () => {
-        if (!confirm(`⚠️ ATTENTION ⚠️\n\nVoulez-vous vraiment supprimer TOUS les contrats (${contracts.length}) ?\n\nCette action est irréversible !`)) {
-          return;
-        }
-
-        if (!confirm('Êtes-vous VRAIMENT sûr ? Avez-vous fait un backup ?')) {
-          return;
-        }
-
-        await clearAllContracts();
-        contracts = [];
-        showToast('Toutes les données ont été effacées', 'warning');
-        renderAll();
-      });
-
       // ========== Tabs ==========
       tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           const tab = btn.dataset.tab;
-          
           tabBtns.forEach(b => b.classList.remove('active'));
           tabContents.forEach(c => c.classList.remove('active'));
-          
           btn.classList.add('active');
           $(`#tab-${tab}`).classList.add('active');
-          
           currentTab = tab;
           renderAll();
         });
@@ -2975,7 +1785,6 @@
       searchName.addEventListener('input', renderContractsList);
       filterProvider.addEventListener('change', renderContractsList);
       filterDate.addEventListener('change', renderContractsList);
-
       dayDate.addEventListener('change', renderDay);
       weekDate.addEventListener('change', renderWeek);
       monthDate.addEventListener('change', renderMonth);
@@ -2998,7 +1807,7 @@
       async function init() {
         const today = todayStr();
         currentDateEl.textContent = formatDate(today);
-        
+
         contractDate.value = today;
         dayDate.value = today;
         weekDate.value = today;
@@ -3006,16 +1815,13 @@
         exportWeekDate.value = today;
         exportMonthDate.value = today;
 
-        // Load theme
         const savedTheme = localStorage.getItem(STORAGE_KEYS.theme) || 'auto';
         themeToggle.value = savedTheme;
         document.documentElement.setAttribute('data-theme', savedTheme);
 
-        // Load goal
         const savedGoal = localStorage.getItem(STORAGE_KEYS.goal);
         if (savedGoal) monthlyGoal.value = savedGoal;
 
-        // Load contracts
         try {
           contracts = await loadContracts();
           contracts.sort((a, b) => b.date.localeCompare(a.date));
@@ -3035,4 +1841,3 @@
   </script>
 </body>
 </html>
-
