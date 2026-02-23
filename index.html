@@ -1214,6 +1214,56 @@
         formError.classList.remove('show');
       }
 
+      function sanitizeContracts(raw) {
+        if (!Array.isArray(raw)) return [];
+        return raw.map((c) => {
+          const out = { ...c };
+          // Normalize legacy keys
+          if (out.reference === undefined && out.ref !== undefined) out.reference = out.ref;
+          if (out.digitalisation === undefined && out.digi !== undefined) out.digitalisation = !!out.digi;
+          if (out.axa === undefined && out.AXA !== undefined) out.axa = !!out.AXA;
+          // Ensure required fields exist
+          if (!out.id) out.id = Date.now() + '_' + Math.random().toString(36).slice(2);
+          if (!out.date) out.date = todayStr();
+          if (!out.name) out.name = 'SANS_NOM';
+          if (!out.provider) out.provider = 'PLENITUDE';
+          if (!out.type) out.type = 'ELEC_6';
+          // Fix IAG provider for IAG contracts
+          if (String(out.type).startsWith('IAG_')) out.provider = 'PLENITUDE';
+          // Power/conso normalization
+          if (out.type !== 'DUAL') { out.power = null; out.conso = null; }
+          return out;
+        });
+      }
+
+      function downloadText(filename, text, mime = 'text/plain') {
+        const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      async function copyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('Copié dans le presse-papier', 'success');
+        } catch {
+          // fallback
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          showToast('Copié dans le presse-papier', 'success');
+        }
+      }
+
       // ========== IndexedDB ==========
       function openDB() {
         return new Promise((resolve, reject) => {
@@ -1256,6 +1306,18 @@
         });
       }
 
+      async function bulkReplaceContracts(newContracts) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          store.clear();
+          newContracts.forEach(c => store.put(c));
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
       async function deleteContract(id) {
         const db = await openDB();
         return new Promise((resolve, reject) => {
@@ -1282,11 +1344,11 @@
       function calculateAmount(contract) {
         let amount = 0;
 
-        if (contract.type.startsWith('IAG_')) {
+        if (String(contract.type).startsWith('IAG_')) {
           return 0; // IAG montant calculé globalement
         }
 
-        if (contract.type.startsWith('PRIMEO_')) {
+        if (String(contract.type).startsWith('PRIMEO_')) {
           amount = TARIFS[contract.type] || 0;
         } else if (contract.type === 'DUAL') {
           const key = `${contract.power}|${contract.conso}`;
@@ -1307,7 +1369,8 @@
             const search = filters.search.toLowerCase();
             const name = (c.name || '').toLowerCase();
             const ref = (c.reference || '').toLowerCase();
-            if (!name.includes(search) && !ref.includes(search)) return false;
+            const iagRef = (c.iagReference || '').toLowerCase();
+            if (!name.includes(search) && !ref.includes(search) && !iagRef.includes(search)) return false;
           }
           if (filters.provider && c.provider !== filters.provider) return false;
           if (filters.date && c.date !== filters.date) return false;
@@ -1332,11 +1395,9 @@
         };
 
         contracts.forEach(c => {
-          if (c.type.startsWith('IAG_')) {
-            stats.iag++;
-          } else {
-            stats.energy++;
-          }
+          const hasIag = String(c.type).startsWith('IAG_') || !!c.iagType; // count IAG contracts + energy contracts tagged with IAG
+          if (hasIag) stats.iag++;
+          if (!String(c.type).startsWith('IAG_')) stats.energy++;
 
           if (c.provider === 'PLENITUDE') stats.plenitude++;
           if (c.provider === 'PRIMEO') stats.primeo++;
@@ -1352,6 +1413,87 @@
         stats.totalAmount += stats.iagAmount;
 
         return stats;
+      }
+
+      function contractTypeLabel(c) {
+        if (String(c.type).startsWith('IAG_')) return `IAG ${String(c.type).split('_')[1]}`;
+        if (c.type === 'DUAL') return `Dual ${c.power}/${c.conso}`;
+        if (String(c.type).startsWith('PRIMEO_')) return c.type.replace(/PRIMEO_/, 'Primeo ').replace(/_/g, ' ');
+        return String(c.type).replace(/_/g, ' ');
+      }
+
+      function buildWeekExportText(dateStr) {
+        const week = getWeekRange(dateStr);
+        const weekContracts = getContractsByPeriod(contracts, week.start, week.end);
+        const stats = computeStats(weekContracts);
+
+        const lines = [];
+        lines.push(`Semaine ${week.week} (${formatDate(week.start)} → ${formatDate(week.end)})`);
+        lines.push(`Total contrats: ${stats.total} | Energie: ${stats.energy} | IAG: ${stats.iag}`);
+        lines.push(`Plenitude: ${stats.plenitude} | Primeo: ${stats.primeo}`);
+        lines.push(`Total rémunération: ${formatEuro(stats.totalAmount)} (IAG: ${formatEuro(stats.iagAmount)})`);
+        lines.push('');
+        lines.push('Détail contrats:');
+
+        if (weekContracts.length === 0) {
+          lines.push('- Aucun contrat');
+        } else {
+          weekContracts
+            .slice()
+            .sort((a,b)=>a.date.localeCompare(b.date))
+            .forEach(c => {
+              const opts = [];
+              if (c.axa) opts.push('AXA');
+              if (c.digitalisation) opts.push('Digi');
+              if (c.iagType) opts.push(`IAG ${c.iagType}${c.iagReference ? ` (${c.iagReference})` : ''}`);
+              const optTxt = opts.length ? ` | ${opts.join(' / ')}` : '';
+              lines.push(`- ${formatDate(c.date)} | ${c.name} | ${c.reference} | ${contractTypeLabel(c)} | ${c.provider} | ${formatEuro(calculateAmount(c))}${optTxt}`);
+            });
+        }
+
+        return lines.join('\n');
+      }
+
+      function buildMonthExportText(dateStr) {
+        const monthStr = dateStr.slice(0,7);
+        const monthContracts = contracts.filter(c => c.date.startsWith(monthStr));
+        const stats = computeStats(monthContracts);
+
+        const lines = [];
+        lines.push(`Mois: ${getMonthLabel(dateStr)}`);
+        lines.push(`Total contrats: ${stats.total} | Energie: ${stats.energy} | IAG: ${stats.iag} (${stats.total>0?((stats.iag/stats.total)*100).toFixed(1):0}%)`);
+        lines.push(`Plenitude: ${stats.plenitude} | Primeo: ${stats.primeo}`);
+        lines.push(`Tarif IAG: ${formatEuro(getIAGTarif(stats.iag))} par IAG`);
+        lines.push(`Total rémunération: ${formatEuro(stats.totalAmount)} (IAG: ${formatEuro(stats.iagAmount)})`);
+        lines.push('');
+        lines.push('Détail contrats:');
+
+        if (monthContracts.length === 0) {
+          lines.push('- Aucun contrat');
+        } else {
+          monthContracts
+            .slice()
+            .sort((a,b)=>a.date.localeCompare(b.date))
+            .forEach(c => {
+              const opts = [];
+              if (c.axa) opts.push('AXA');
+              if (c.digitalisation) opts.push('Digi');
+              if (c.iagType) opts.push(`IAG ${c.iagType}${c.iagReference ? ` (${c.iagReference})` : ''}`);
+              const optTxt = opts.length ? ` | ${opts.join(' / ')}` : '';
+              lines.push(`- ${formatDate(c.date)} | ${c.name} | ${c.reference} | ${contractTypeLabel(c)} | ${c.provider} | ${formatEuro(calculateAmount(c))}${optTxt}`);
+            });
+        }
+
+        return lines.join('\n');
+      }
+
+      function toCSV(rows) {
+        const esc = (v) => {
+          const s = String(v ?? '');
+          if (/[";\n\r]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+          return s;
+        };
+        return rows.map(r => r.map(esc).join(';')).join('\n');
       }
 
       // ========== Form Management ==========
@@ -1418,7 +1560,7 @@
         }
 
         // Show IAG selector only for energy (not for IAG contracts themselves)
-        if (!type.startsWith('IAG_')) {
+        if (!String(type).startsWith('IAG_')) {
           iagGroup.style.display = '';
         }
       }
@@ -1484,14 +1626,19 @@
         }
 
         // IAG reference: required only when you tag an energy contract with IAG type
-        if (!type.startsWith('IAG_') && iagTypeSelected && !iagReferenceInput) {
+        if (!String(type).startsWith('IAG_') && iagTypeSelected && !iagReferenceInput) {
           showError('Veuillez saisir la référence IAG.');
           return;
         }
 
-        if (!type.startsWith('IAG_') && iagTypeSelected) {
+        if (!String(type).startsWith('IAG_') && iagTypeSelected) {
           contract.iagType = iagTypeSelected;
           contract.iagReference = iagReferenceInput ? iagReferenceInput : null;
+        }
+
+        // For pure IAG contracts: set provider to PLENITUDE (for stats split) and store type
+        if (String(type).startsWith('IAG_')) {
+          contract.provider = 'PLENITUDE';
         }
 
         try {
@@ -1526,16 +1673,7 @@
         meta.className = 'list-item-meta';
 
         let metaText = `📅 ${formatDate(contract.date)} • 🔖 ${contract.reference} • `;
-
-        if (contract.type === 'DUAL') {
-          metaText += `Dual ${contract.power}/${contract.conso}`;
-        } else if (contract.type.startsWith('IAG_')) {
-          metaText += `IAG ${contract.type.split('_')[1]}`;
-        } else if (contract.type.startsWith('PRIMEO_')) {
-          metaText += contract.type.replace(/PRIMEO_/, 'Primeo ').replace(/_/g, ' ');
-        } else {
-          metaText += contract.type.replace('_', ' ');
-        }
+        metaText += `${contractTypeLabel(contract)}`;
 
         if (contract.axa) metaText += ' • AXA';
         if (contract.digitalisation) metaText += ' • Digi';
@@ -1551,7 +1689,7 @@
         actions.className = 'list-item-actions';
 
         const badge = document.createElement('span');
-        badge.className = `badge badge-${contract.provider.toLowerCase()}`;
+        badge.className = `badge badge-${String(contract.provider).toLowerCase()}`;
         badge.textContent = contract.provider;
 
         const amount = document.createElement('div');
@@ -1795,6 +1933,104 @@
         renderMonth();
       });
 
+      // ========== Export handlers ==========
+      btnGenerateWeek.addEventListener('click', () => {
+        const d = exportWeekDate.value || todayStr();
+        const text = buildWeekExportText(d);
+        weekExportPreview.textContent = text;
+        showToast('Export semaine généré', 'success');
+      });
+
+      btnGenerateMonth.addEventListener('click', () => {
+        const d = exportMonthDate.value || todayStr();
+        const text = buildMonthExportText(d);
+        monthExportPreview.textContent = text;
+        showToast('Export mois généré', 'success');
+      });
+
+      btnCopyWeek.addEventListener('click', () => {
+        const text = weekExportPreview.textContent || '';
+        if (!text.trim()) { showToast('Génère d\'abord un export semaine', 'warning'); return; }
+        copyToClipboard(text);
+      });
+
+      btnCopyMonth.addEventListener('click', () => {
+        const text = monthExportPreview.textContent || '';
+        if (!text.trim()) { showToast('Génère d\'abord un export mois', 'warning'); return; }
+        copyToClipboard(text);
+      });
+
+      btnExportJSON.addEventListener('click', () => {
+        const payload = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          contracts,
+          goal: parseInt(monthlyGoal.value) || 0
+        };
+        downloadText(`remuneration_backup_${todayStr()}.json`, JSON.stringify(payload, null, 2), 'application/json');
+        localStorage.setItem(STORAGE_KEYS.lastBackup, new Date().toISOString());
+        showToast('Backup JSON téléchargé', 'success');
+      });
+
+      btnExportCSV.addEventListener('click', () => {
+        const rows = [
+          ['id','date','name','reference','provider','type','power','conso','axa','digitalisation','iagType','iagReference','amount']
+        ];
+        contracts.forEach(c => {
+          rows.push([
+            c.id,
+            c.date,
+            c.name,
+            c.reference,
+            c.provider,
+            c.type,
+            c.power ?? '',
+            c.conso ?? '',
+            c.axa ? 1 : 0,
+            c.digitalisation ? 1 : 0,
+            c.iagType ?? '',
+            c.iagReference ?? '',
+            calculateAmount(c)
+          ]);
+        });
+        downloadText(`remuneration_contracts_${todayStr()}.csv`, toCSV(rows), 'text/csv');
+        showToast('CSV téléchargé', 'success');
+      });
+
+      btnImportJSON.addEventListener('click', () => {
+        importFile.value = '';
+        importFile.click();
+      });
+
+      importFile.addEventListener('change', async () => {
+        const file = importFile.files && importFile.files[0];
+        if (!file) return;
+        try {
+          const txt = await file.text();
+          const data = JSON.parse(txt);
+          const importedContracts = sanitizeContracts(data.contracts || data);
+          await bulkReplaceContracts(importedContracts);
+          contracts = importedContracts;
+          contracts.sort((a,b)=>b.date.localeCompare(a.date));
+          if (data.goal !== undefined) {
+            monthlyGoal.value = data.goal;
+            localStorage.setItem(STORAGE_KEYS.goal, String(data.goal));
+          }
+          renderAll();
+          showToast('Import JSON terminé', 'success');
+        } catch (err) {
+          showToast('Import JSON échoué: ' + err.message, 'error');
+        }
+      });
+
+      btnClearAll.addEventListener('click', async () => {
+        if (!confirm('Tout effacer ? Cette action est irréversible.')) return;
+        await clearAllContracts();
+        contracts = [];
+        renderAll();
+        showToast('Toutes les données ont été effacées', 'warning');
+      });
+
       // ========== Theme ==========
       themeToggle.addEventListener('change', () => {
         const theme = themeToggle.value;
@@ -1823,7 +2059,7 @@
         if (savedGoal) monthlyGoal.value = savedGoal;
 
         try {
-          contracts = await loadContracts();
+          contracts = sanitizeContracts(await loadContracts());
           contracts.sort((a, b) => b.date.localeCompare(a.date));
         } catch (err) {
           console.error('Error loading contracts:', err);
