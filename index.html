@@ -990,7 +990,7 @@
 
       // ========== Configuration ==========
       const DB_NAME = 'remunerationProDB';
-      const DB_VERSION = 2;
+      const DB_VERSION = 3;
       const STORE_NAME = 'contracts';
       const STORAGE_KEYS = {
         theme: 'remuneration_theme',
@@ -1230,19 +1230,15 @@
         if (!Array.isArray(raw)) return [];
         return raw.map((c) => {
           const out = { ...c };
-          // Normalize legacy keys
           if (out.reference === undefined && out.ref !== undefined) out.reference = out.ref;
           if (out.digitalisation === undefined && out.digi !== undefined) out.digitalisation = !!out.digi;
           if (out.axa === undefined && out.AXA !== undefined) out.axa = !!out.AXA;
-          // Ensure required fields exist
           if (!out.id) out.id = Date.now() + '_' + Math.random().toString(36).slice(2);
           if (!out.date) out.date = todayStr();
           if (!out.name) out.name = 'SANS_NOM';
           if (!out.provider) out.provider = 'PLENITUDE';
           if (!out.type) out.type = 'ELEC_6';
-          // Fix IAG provider for IAG contracts
           if (String(out.type).startsWith('IAG_')) out.provider = 'PLENITUDE';
-          // Power/conso normalization
           if (out.type !== 'DUAL') { out.power = null; out.conso = null; }
           return out;
         });
@@ -1270,13 +1266,16 @@
           
           req.onupgradeneeded = (e) => {
             const db = e.target.result;
+            let store;
             if (!db.objectStoreNames.contains(STORE_NAME)) {
-              const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-              store.createIndex('date', 'date', { unique: false });
-              store.createIndex('provider', 'provider', { unique: false });
-              store.createIndex('type', 'type', { unique: false });
-              store.createIndex('reference', 'reference', { unique: false });
+              store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            } else {
+              store = req.transaction.objectStore(STORE_NAME);
             }
+            if (!store.indexNames.contains('date')) store.createIndex('date', 'date', { unique: false });
+            if (!store.indexNames.contains('provider')) store.createIndex('provider', 'provider', { unique: false });
+            if (!store.indexNames.contains('type')) store.createIndex('type', 'type', { unique: false });
+            if (!store.indexNames.contains('reference')) store.createIndex('reference', 'reference', { unique: false });
           };
 
           req.onsuccess = (e) => resolve(e.target.result);
@@ -1343,10 +1342,7 @@
       // ========== Business Logic ==========
       function calculateAmount(contract) {
         let amount = 0;
-
-        if (String(contract.type).startsWith('IAG_')) {
-          return 0; // IAG montant calculé globalement
-        }
+        if (String(contract.type).startsWith('IAG_')) return 0;
 
         if (String(contract.type).startsWith('PRIMEO_')) {
           amount = TARIFS[contract.type] || 0;
@@ -1359,7 +1355,6 @@
 
         if (contract.axa) amount += TARIFS.AXA;
         if (contract.digitalisation) amount += TARIFS.DIGI;
-
         return amount;
       }
 
@@ -1387,14 +1382,12 @@
           const typeKey = c.type + (c.type === 'DUAL' ? `_${c.power}_${c.conso}` : '');
           stats.byType[typeKey] = (stats.byType[typeKey] || 0) + 1;
 
-          const a = calculateAmount(c);
-          stats.energyAmount += a;
+          stats.energyAmount += calculateAmount(c);
         });
 
         const iagTarif = getIAGTarif(stats.iag);
         stats.iagAmount = stats.iag * iagTarif;
         stats.totalAmount = stats.energyAmount + stats.iagAmount;
-
         return stats;
       }
 
@@ -1707,7 +1700,6 @@
           return;
         }
 
-        // Dedup check (except current contract when editing)
         if (isDuplicateReference(reference, editingId)) {
           const ok = confirm('⚠️ Doublon détecté : cette référence existe déjà. Continuer quand même ?');
           if (!ok) return;
@@ -1823,7 +1815,6 @@
           setEditMode(contract.id);
           fillFormFromContract(contract);
           showToast('Mode édition activé', 'info');
-          // Switch to contracts tab if needed
           if (currentTab !== 'contrats') {
             document.querySelector('.tab-btn[data-tab="contrats"]').click();
           }
