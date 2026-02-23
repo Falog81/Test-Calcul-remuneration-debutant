@@ -81,29 +81,15 @@
     .topbar .left{ min-width:240px; }
     .topbar .right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
-    .tabs{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; border-bottom:2px solid var(--border); }
-    .tab{
-      appearance:none; border:none; background:transparent; color:var(--muted);
-      padding:10px 16px; border-radius:12px 12px 0 0; font-weight:700; cursor:pointer;
-      border-bottom:3px solid transparent; transition: all 180ms ease;
-    }
-    .tab:hover{ background: color-mix(in srgb, var(--card) 88%, transparent); }
-    .tab.active{ color:var(--text); border-bottom-color: rgba(110,231,255,.90); }
-
-    .tabContent{ display:none; }
-    .tabContent.active{ display:block; }
-
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
     label{ display:block; font-size:12px; color:var(--muted); margin:2px 0 6px; }
-    input[type="text"], input[type="date"], input[type="number"], select, textarea{
+    input[type="text"], input[type="date"], input[type="number"], select{
       width:100%; padding:10px 10px; border-radius:12px;
       border:1px solid var(--border);
       background: color-mix(in srgb, var(--card) 70%, var(--bg));
       color:var(--text);
       outline:none;
-      font-family:var(--sans);
     }
-    textarea{ min-height:80px; resize:vertical; font-size:13px; line-height:1.4; }
     input[type="text"]::placeholder{ color: color-mix(in srgb, var(--muted) 85%, transparent); }
     .field{ min-width:140px; flex:1; }
     .field.sm{ min-width:120px; flex:0 0 160px; }
@@ -142,3 +128,1517 @@
     .kpi .t{ font-size:12px; color:var(--muted); }
     .kpi .v{ margin-top:6px; font-size:18px; font-weight:900; letter-spacing:.2px; font-family:var(--mono); }
     .kpi .s{ margin-top:6px; font-size:12px; color:var(--muted); }
+
+    .hr{ height:1px; background: var(--border); margin:10px 0; }
+    .note{ font-size:12px; color:var(--muted); line-height:1.35; }
+    .err{
+      margin-top:10px; padding:10px; border-radius:12px;
+      border:1px solid rgba(255,107,107,.25);
+      background: rgba(255,107,107,.08);
+      color: color-mix(in srgb, var(--text) 92%, transparent);
+      font-size:13px; display:none;
+    }
+
+    .list{ display:flex; flex-direction:column; gap:10px; max-height:380px; overflow:auto; }
+    .item{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background: color-mix(in srgb, var(--card) 88%, transparent);
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .item .left{ min-width:0; }
+    .item .title{ font-weight:900; word-break:break-word; }
+    .item .meta{ margin-top:4px; font-size:12px; color:var(--muted); line-height:1.35; }
+    .item .right{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex:0 0 auto; }
+    .amt{ font-weight:900; font-size:14px; white-space:nowrap; font-family:var(--mono); }
+    .tag{ font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); background: color-mix(in srgb, var(--card) 88%, transparent); white-space:nowrap; }
+    .tag.iag{ border-color: rgba(110,231,255,.25); color: color-mix(in srgb, rgba(110,231,255,.95) 88%, var(--text)); }
+    .tag.zero{ border-color: rgba(255,209,102,.25); color: color-mix(in srgb, rgba(255,209,102,.95) 88%, var(--text)); }
+    .smallbtn{ padding:8px 10px; border-radius:10px; font-size:12px; }
+
+    .chartWrap{ position:relative; width:100%; height:380px; }
+    @media (min-width:860px){ .chartWrap{ height:420px; } }
+
+    .chartRow{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width:860px){ .chartRow{ grid-template-columns: 2fr 1fr; } }
+    .chartSmall{ position:relative; width:100%; height:280px; }
+
+    details summary{
+      cursor:pointer;
+      font-weight:800;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: color-mix(in srgb, var(--card) 88%, transparent);
+      user-select:none;
+    }
+    details[open] summary{ margin-bottom:10px; }
+
+    #toastHost{
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 14px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast{
+      pointer-events: auto;
+      border: 1px solid rgba(255,255,255,.12);
+      background: color-mix(in srgb, var(--card) 92%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: color-mix(in srgb, var(--text) 96%, transparent);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.25);
+      font-size: 13px;
+      line-height: 1.35;
+      transform: translateY(8px);
+      opacity: 0;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+    .toast.show{ opacity: 1; transform: translateY(0); }
+    .toast.info{ border-color: rgba(110,231,255,.22); }
+    .toast.ok{ border-color: rgba(124,255,178,.22); }
+    .toast.warn{ border-color: rgba(255,209,102,.22); }
+    .toast.err{ border-color: rgba(255,107,107,.28); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="left">
+      <h1>Rémunération Débutant</h1>
+      <div class="sub" id="storageStatus">Stockage: …</div>
+    </div>
+    <div class="right">
+      <div class="pill">Analyse: <strong id="pillDate">----</strong></div>
+      <div class="field xs" style="min-width:170px;">
+        <label for="dateAnalyse">Date d’analyse</label>
+        <input id="dateAnalyse" type="date" />
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="card span2" aria-labelledby="hAdd">
+      <h2 id="hAdd">1) Ajouter un contrat</h2>
+      <form id="addForm" autocomplete="off" novalidate>
+        <div class="row">
+          <div class="field sm">
+            <label for="fDate">Date *</label>
+            <input id="fDate" type="date" />
+          </div>
+          <div class="field">
+            <label for="fNom">Nom *</label>
+            <input id="fNom" type="text" placeholder="Ex: Dupont" maxlength="80" />
+          </div>
+          <div class="field sm">
+            <label for="fType">Type *</label>
+            <select id="fType">
+              <option value="PLEN_ELEC">PLEN_ELEC</option>
+              <option value="PLEN_GAZ">PLEN_GAZ</option>
+              <option value="PLEN_DUAL">PLEN_DUAL</option>
+              <option value="PRIMEO">PRIMEO</option>
+              <option value="IAG_SEUL">IAG_SEUL</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" id="rowCond">
+          <div class="field sm" id="wrapPuissance" style="display:none;">
+            <label for="fPuissance">Puissance *</label>
+            <select id="fPuissance"></select>
+          </div>
+
+          <div class="field sm" id="wrapConso" style="display:none;">
+            <label for="fConso">Consommation *</label>
+            <select id="fConso"></select>
+          </div>
+
+          <div class="field" id="wrapOptions" style="display:none; min-width:260px;">
+            <label>Options (PLEN_ELEC / PLEN_GAZ / PLEN_DUAL)</label>
+            <div class="checkline">
+              <label><input id="fAssistance" type="checkbox" /> Assistance AXA (+7€)</label>
+              <label><input id="fDigitalisation" type="checkbox" /> Digitalisation (+2€)</label>
+            </div>
+          </div>
+
+          <div class="field sm" id="wrapIAG" style="min-width:170px;">
+            <label for="fIAG">IAG</label>
+            <select id="fIAG">
+              <option value="false">Non</option>
+              <option value="true">Oui</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btnbar">
+          <button type="submit">Ajouter</button>
+          <button type="button" class="btn-ghost" id="btnFillToday">Mettre la date d’analyse</button>
+        </div>
+
+        <div class="err" id="formErr" role="alert" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="hDay">
+      <h2 id="hDay">2) Résumé du jour</h2>
+      <div class="kpis" id="dayKPIs"></div>
+      <div class="hr"></div>
+      <div class="note" id="dayNote"></div>
+    </section>
+
+    <section class="card" aria-labelledby="hMonth">
+      <h2 id="hMonth">3) Résumé du mois</h2>
+      <div class="kpis" id="monthKPIs"></div>
+      <div class="hr"></div>
+      <div class="note" id="monthNote"></div>
+    </section>
+
+    <section class="card" aria-labelledby="hListDay">
+      <h2 id="hListDay">4) Contrats du jour (aujourd’hui)</h2>
+      <div class="list" id="listDay"></div>
+      <div class="note" id="listDayEmpty" style="display:none;">Aucun contrat aujourd’hui.</div>
+    </section>
+
+    <section class="card" aria-labelledby="hListAll">
+      <h2 id="hListAll">5) Contrats du jour demandé (tri ↓)</h2>
+      <div class="row" style="margin-bottom:8px;">
+        <div class="field" style="min-width:220px;">
+          <label for="filterName">Recherche (nom)</label>
+          <input id="filterName" type="text" placeholder="Ex: dupont" />
+        </div>
+      </div>
+      <div class="list" id="listAll"></div>
+      <div class="note" id="listAllEmpty" style="display:none;">Aucun contrat sur le jour demandé.</div>
+    </section>
+
+    <section class="card span2" aria-labelledby="hCharts">
+      <h2 id="hCharts">6) Graphiques</h2>
+
+      <div class="row" style="margin-bottom:8px;">
+        <div class="field sm" style="min-width:190px;">
+          <label for="chartView">Vue</label>
+          <select id="chartView">
+            <option value="day">Jour (par jour)</option>
+            <option value="month">Mois (par mois)</option>
+            <option value="year">Année (par année)</option>
+          </select>
+        </div>
+        <div class="field sm" style="min-width:150px;">
+          <label for="chartYear">Année</label>
+          <select id="chartYear"></select>
+        </div>
+        <div class="field sm" id="wrapChartMonth" style="min-width:180px;">
+          <label for="chartMonth">Mois</label>
+          <select id="chartMonth"></select>
+        </div>
+        <div class="field" style="min-width:220px;">
+          <label for="chartMetric">Détail</label>
+          <select id="chartMetric">
+            <option value="stack">Énergie + IAG (détail)</option>
+            <option value="total">Total seulement</option>
+            <option value="energy">Énergie seulement</option>
+            <option value="iag">IAG seulement</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="chartRow">
+        <div>
+          <div class="chartWrap">
+            <canvas id="contractsChart" aria-label="Graphique contrats" role="img"></canvas>
+          </div>
+          <div class="note" id="chartNote" style="margin-top:10px;"></div>
+        </div>
+
+        <div>
+          <div class="card" style="padding:12px;">
+            <div style="font-weight:900;margin-bottom:8px;">Répartition (mois analysé)</div>
+            <div class="chartSmall">
+              <canvas id="typeChart" aria-label="Répartition par type" role="img"></canvas>
+            </div>
+            <div class="note" id="typeChartNote" style="margin-top:10px;">Types du mois analysé.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="kpis" id="insightsKPIs"></div>
+
+      <div class="hr"></div>
+      <div class="row">
+        <div class="field sm" style="min-width:220px;">
+          <label for="goalMonthly">Objectif mensuel (Total contrats)</label>
+          <input id="goalMonthly" type="number" min="0" step="1" placeholder="Ex: 120" />
+        </div>
+        <div class="field">
+          <label>Progression (mois analysé)</label>
+          <div class="pill" style="width:100%; justify-content:space-between;">
+            <span id="goalProgressText">—</span>
+            <strong id="goalProgressPct">—</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card span2" aria-labelledby="hActions">
+      <h2 id="hActions">7) Actions</h2>
+      <div class="btnbar">
+        <button type="button" id="btnExport">Exporter (JSON)</button>
+        <button type="button" id="btnExportCsv">Exporter (CSV)</button>
+        <div class="field xs" style="min-width:190px; align-self:center;">
+          <label for="importMode">Import</label>
+          <select id="importMode">
+            <option value="merge">Fusionner</option>
+            <option value="replace">Remplacer</option>
+          </select>
+        </div>
+        <button type="button" id="btnImport">Importer (JSON)</button>
+        <input id="importFile" type="file" accept="application/json" style="display:none" />
+        <button type="button" class="btn-danger" id="btnDeleteDay">Supprimer jour (date d’analyse)</button>
+        <button type="button" class="btn-danger" id="btnClearAll">Tout effacer</button>
+      </div>
+
+      <details style="margin-top:12px;">
+        <summary>Paramètres</summary>
+        <div class="row">
+          <div class="field sm" style="min-width:220px;">
+            <label for="themeSelect">Thème</label>
+            <select id="themeSelect">
+              <option value="auto">Auto (système)</option>
+              <option value="dark">Sombre</option>
+              <option value="light">Clair</option>
+            </select>
+          </div>
+          <div class="field sm" style="min-width:220px;">
+            <label for="csvSeparator">Séparateur CSV</label>
+            <select id="csvSeparator">
+              <option value=";">; (Excel FR)</option>
+              <option value=",">, (standard)</option>
+            </select>
+          </div>
+        </div>
+        <div class="note">Le thème et le séparateur CSV sont mémorisés sur ce téléphone.</div>
+      </details>
+
+      <div class="note" style="margin-top:10px;" id="actionsNote">
+        Conseil: exporte un backup JSON/CSV régulièrement et garde-le dans un cloud.
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="toastHost" aria-live="polite" aria-atomic="true"></div>
+
+<script src="chart.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  const DB_NAME = 'contratsDB_v1';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'contrats';
+
+  const KEY_GOAL_MONTHLY = 'contrats_goal_monthly';
+  const KEY_LAST_BACKUP = 'contrats_last_backup_iso';
+  const KEY_THEME = 'remuneration_theme';
+  const KEY_CSV_SEP = 'remuneration_csv_sep';
+
+  const EXPORT_FORMAT = 4;
+
+  const $ = (sel) => document.querySelector(sel);
+
+  const storageStatus = $("#storageStatus");
+  const dateAnalyse = $("#dateAnalyse");
+  const pillDate = $("#pillDate");
+
+  const addForm = $("#addForm");
+  const formErr = $("#formErr");
+
+  const fDate = $("#fDate");
+  const fNom = $("#fNom");
+  const fType = $("#fType");
+  const fPuissance = $("#fPuissance");
+  const fConso = $("#fConso");
+  const fAssistance = $("#fAssistance");
+  const fDigitalisation = $("#fDigitalisation");
+  const fIAG = $("#fIAG");
+
+  const wrapPuissance = $("#wrapPuissance");
+  const wrapConso = $("#wrapConso");
+  const wrapOptions = $("#wrapOptions");
+
+  const btnFillToday = $("#btnFillToday");
+
+  const dayKPIs = $("#dayKPIs");
+  const monthKPIs = $("#monthKPIs");
+  const dayNote = $("#dayNote");
+  const monthNote = $("#monthNote");
+
+  const listDay = $("#listDay");
+  const listAll = $("#listAll");
+  const listDayEmpty = $("#listDayEmpty");
+  const listAllEmpty = $("#listAllEmpty");
+
+  const filterName = $("#filterName");
+
+  const btnDeleteDay = $("#btnDeleteDay");
+  const btnClearAll = $("#btnClearAll");
+
+  const btnExport = $("#btnExport");
+  const btnExportCsv = $("#btnExportCsv");
+  const btnImport = $("#btnImport");
+  const importFile = $("#importFile");
+  const importMode = $("#importMode");
+
+  const chartView = $("#chartView");
+  const chartYear = $("#chartYear");
+  const chartMonth = $("#chartMonth");
+  const wrapChartMonth = $("#wrapChartMonth");
+  const chartMetric = $("#chartMetric");
+  const chartNote = $("#chartNote");
+  const chartCanvas = $("#contractsChart");
+
+  const insightsKPIs = $("#insightsKPIs");
+
+  const typeChartCanvas = $("#typeChart");
+  const typeChartNote = $("#typeChartNote");
+
+  const goalMonthly = $("#goalMonthly");
+  const goalProgressText = $("#goalProgressText");
+  const goalProgressPct = $("#goalProgressPct");
+
+  const themeSelect = $("#themeSelect");
+  const csvSeparator = $("#csvSeparator");
+
+  // Toasts
+  const toastHost = $("#toastHost");
+  function toast(msg, kind='info', ttl=2600){
+    if(!toastHost) return;
+    const el = document.createElement('div');
+    el.className = `toast ${kind}`;
+    el.textContent = msg;
+    toastHost.appendChild(el);
+    requestAnimationFrame(()=> el.classList.add('show'));
+    setTimeout(()=>{
+      el.classList.remove('show');
+      setTimeout(()=> el.remove(), 220);
+    }, ttl);
+  }
+  function showErr(msg){ formErr.textContent = msg; formErr.style.display = "block"; toast(msg, 'err', 3800); }
+  function clearErr(){ formErr.textContent = ""; formErr.style.display = "none"; }
+
+  function markBackupNow(){
+    try{ localStorage.setItem(KEY_LAST_BACKUP, new Date().toISOString()); }catch(e){}
+  }
+  function maybeRemindBackup(){
+    try{
+      const iso = localStorage.getItem(KEY_LAST_BACKUP);
+      if(!iso) return toast('Conseil: fais un export JSON/CSV (backup).', 'warn', 5200);
+      const last = new Date(iso);
+      const days = (Date.now() - last.getTime()) / (1000*60*60*24);
+      if(days >= 7) toast('Backup conseillé: dernier export il y a ~' + Math.floor(days) + ' jours.', 'warn', 6000);
+    }catch(e){}
+  }
+
+  // Theme
+  function setTheme(v){
+    const value = (v === 'dark' || v === 'light' || v === 'auto') ? v : 'auto';
+    document.documentElement.setAttribute('data-theme', value);
+    try{ localStorage.setItem(KEY_THEME, value); }catch(e){}
+  }
+
+  // CSV separator
+  function getCsvSep(){
+    const v = (csvSeparator && csvSeparator.value) ? csvSeparator.value : ';';
+    return (v === ',' ? ',' : ';');
+  }
+
+  function openDb(){
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (ev) => {
+        const db = ev.target.result;
+        if(!db.objectStoreNames.contains(STORE_NAME)){
+          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = (ev) => resolve(ev.target.result);
+      req.onerror = (ev) => reject(ev.target.error);
+    });
+  }
+
+  async function idbGetAll(){
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbSetAll(entries){
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const clearReq = store.clear();
+      clearReq.onerror = () => reject(clearReq.error);
+      clearReq.onsuccess = () => {
+        (entries || []).forEach(e => store.put(e));
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function idbAdd(entry){
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(entry);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbDelete(id){
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function todayStr(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return y+"-"+m+"-"+day;
+  }
+  function daysInMonth(year, month1to12){ return new Date(year, month1to12, 0).getDate(); }
+  function euro(n){ const x = (Number.isFinite(n) ? n : 0); return x.toFixed(2).replace(".", ",") + " €"; }
+  function clampText(s){ s = (s == null ? "" : String(s)); return s.trim().slice(0, 80); }
+  function uid(){ return String(Date.now()) + "_" + Math.random().toString(16).slice(2); }
+
+  const TYPES = ["PLEN_ELEC","PLEN_GAZ","PLEN_DUAL","PRIMEO","IAG_SEUL"];
+  const PUISSANCE_ELEC_DUAL = ["3","6-9","12"];
+  const PUISSANCE_PRIMEO = ["6","9","12"];
+  const CONSO_GAZ_DUAL = ["1-6","6-13","13"];
+
+  function basePlenGaz(c){ if(c==="1-6") return 2; if(c==="6-13") return 7; if(c==="13") return 12; return NaN; }
+  function basePlenElec(p){ if(p==="3") return 2; if(p==="6-9") return 7; if(p==="12") return 12; return NaN; }
+  function basePlenDual(p,c){
+    const map = {
+      "3|1-6":4, "3|6-13":5, "3|13":14,
+      "6-9|1-6":9, "6-9|6-13":14, "6-9|13":19,
+      "12|1-6":14, "12|6-13":19, "12|13":24
+    };
+    const k = String(p)+"|"+String(c);
+    return (k in map) ? map[k] : NaN;
+  }
+  function basePrimeo(p){ if(p==="6") return 10; if(p==="9") return 15; if(p==="12") return 20; return NaN; }
+
+  function iagUnitTariff(nb){
+    const n = Number(nb) || 0;
+    if(n <= 0) return 0;
+    if(n <= 10) return 5;
+    if(n <= 20) return 7.5;
+    if(n <= 30) return 10;
+    if(n <= 40) return 15;
+    if(n <= 54) return 17.5;
+    return 20;
+  }
+
+  function amountForContract(e){
+    if(!e || !e.type) return 0;
+    const t = e.type;
+    if(t === "IAG_SEUL") return 0;
+
+    if(t === "PLEN_GAZ"){
+      const b = basePlenGaz(e.consommation);
+      if(!Number.isFinite(b)) return 0;
+      let x = b; if(e.assistance) x += 7; if(e.digitalisation) x += 2; return x;
+    }
+    if(t === "PLEN_ELEC"){
+      const b = basePlenElec(e.puissance);
+      if(!Number.isFinite(b)) return 0;
+      let x = b; if(e.assistance) x += 7; if(e.digitalisation) x += 2; return x;
+    }
+    if(t === "PLEN_DUAL"){
+      const b = basePlenDual(e.puissance, e.consommation);
+      if(!Number.isFinite(b)) return 0;
+      let x = b; if(e.assistance) x += 7; if(e.digitalisation) x += 2; return x;
+    }
+    if(t === "PRIMEO"){
+      const b = basePrimeo(e.puissance);
+      return Number.isFinite(b) ? b : 0;
+    }
+    return 0;
+  }
+
+  function isEnergyContract(e){ return e && e.type && e.type !== "IAG_SEUL"; }
+
+  function normalizeEntry(raw){
+    const e = Object.assign({}, raw || {});
+    e.id = String(e.id || uid());
+    e.date = String(e.date || "");
+    e.nom = clampText(e.nom);
+    e.type = String(e.type || "PLEN_ELEC");
+    e.puissance = (e.puissance == null ? null : String(e.puissance));
+    e.consommation = (e.consommation == null ? null : String(e.consommation));
+    e.assistance = !!e.assistance;
+    e.digitalisation = !!e.digitalisation;
+
+    if(e.type === "IAG_SEUL"){
+      e.iag = true;
+      e.puissance = null;
+      e.consommation = null;
+      e.assistance = false;
+      e.digitalisation = false;
+    }else{
+      e.iag = !!e.iag;
+      if(!(e.type === "PLEN_ELEC" || e.type === "PLEN_GAZ" || e.type === "PLEN_DUAL")){
+        e.assistance = false;
+        e.digitalisation = false;
+      }
+      if(e.type === "PLEN_ELEC") e.consommation = null;
+      else if(e.type === "PLEN_GAZ") e.puissance = null;
+      else if(e.type === "PRIMEO") e.consommation = null;
+    }
+    return e;
+  }
+
+  function sortDesc(a,b){ if(a.date !== b.date) return (a.date < b.date) ? 1 : -1; return (a.id < b.id) ? 1 : -1; }
+
+  function computeAll(all, dateAnalyse){
+    const dayStr = dateAnalyse;
+    const monthStr = dateAnalyse.slice(0,7);
+
+    const dayEntries = all.filter(e => e.date === dayStr);
+    const monthEntries = all.filter(e => (e.date || '').slice(0,7) === monthStr);
+
+    const dayEnergy = dayEntries.filter(isEnergyContract);
+    const monthEnergy = monthEntries.filter(isEnergyContract);
+
+    const nbIAGJour = dayEntries.filter(e => !!e.iag).length;
+    const nbIAGMois = monthEntries.filter(e => !!e.iag).length;
+
+    const gainsContratsJour = dayEnergy.reduce((s,e)=> s + amountForContract(e), 0);
+    const gainsContratsMois = monthEnergy.reduce((s,e)=> s + amountForContract(e), 0);
+
+    const tarifIAG = iagUnitTariff(nbIAGMois);
+    const gainIAGJour = tarifIAG * nbIAGJour;
+    const gainIAGMois = tarifIAG * nbIAGMois;
+
+    const totalJour = gainsContratsJour + gainIAGJour;
+    const totalMois = gainsContratsMois + gainIAGMois;
+
+    const totalContratsJour = dayEnergy.length + nbIAGJour;
+    const totalContratsMois = monthEnergy.length + nbIAGMois;
+
+    const pctIAG = (totalContratsMois > 0) ? (nbIAGMois / totalContratsMois) * 100 : 0;
+
+    return {
+      dayStr, monthStr,
+      dayEntries, monthEntries,
+      dayEnergy, monthEnergy,
+      nbIAGJour, nbIAGMois,
+      totalContratsJour, totalContratsMois,
+      gainsContratsJour, gainsContratsMois,
+      tarifIAG, gainIAGJour, gainIAGMois,
+      totalJour, totalMois,
+      pctIAG
+    };
+  }
+
+  function formatDetails(e){
+    const parts = [];
+    parts.push("Date: " + e.date);
+    parts.push("Type: " + e.type);
+
+    if(e.type === "PLEN_ELEC"){
+      parts.push("Puissance: " + e.puissance);
+      if(e.assistance) parts.push("Assistance AXA");
+      if(e.digitalisation) parts.push("Digitalisation");
+    }else if(e.type === "PLEN_GAZ"){
+      parts.push("Consommation: " + e.consommation);
+      if(e.assistance) parts.push("Assistance AXA");
+      if(e.digitalisation) parts.push("Digitalisation");
+    }else if(e.type === "PLEN_DUAL"){
+      parts.push("Puissance: " + e.puissance);
+      parts.push("Consommation: " + e.consommation);
+      if(e.assistance) parts.push("Assistance AXA");
+      if(e.digitalisation) parts.push("Digitalisation");
+    }else if(e.type === "PRIMEO"){
+      parts.push("Puissance: " + e.puissance);
+    }else if(e.type === "IAG_SEUL"){
+      parts.push("IAG: forcé");
+    }
+
+    parts.push("IAG: " + (e.iag ? "Oui" : "Non"));
+    return parts.join(" • ");
+  }
+
+  function updateConditionalFields(){
+    const t = fType.value;
+    wrapPuissance.style.display = "none";
+    wrapConso.style.display = "none";
+    wrapOptions.style.display = "none";
+
+    const optionsAllowed = (t === "PLEN_ELEC" || t === "PLEN_GAZ" || t === "PLEN_DUAL");
+    if(!optionsAllowed){ fAssistance.checked = false; fDigitalisation.checked = false; }
+
+    if(t === "IAG_SEUL"){ fIAG.value = "true"; fIAG.disabled = true; }
+    else { fIAG.disabled = false; }
+
+    function setOptions(selectEl, values){
+      selectEl.innerHTML = "";
+      values.forEach(v=>{
+        const opt = document.createElement("option");
+        opt.value = v; opt.textContent = v;
+        selectEl.appendChild(opt);
+      });
+      if(values.length) selectEl.value = values[0];
+    }
+
+    if(t === "PLEN_ELEC"){
+      wrapPuissance.style.display = "";
+      setOptions(fPuissance, PUISSANCE_ELEC_DUAL);
+      wrapOptions.style.display = "";
+      fConso.innerHTML = "";
+    }else if(t === "PLEN_GAZ"){
+      wrapConso.style.display = "";
+      setOptions(fConso, CONSO_GAZ_DUAL);
+      wrapOptions.style.display = "";
+      fPuissance.innerHTML = "";
+    }else if(t === "PLEN_DUAL"){
+      wrapPuissance.style.display = "";
+      wrapConso.style.display = "";
+      setOptions(fPuissance, PUISSANCE_ELEC_DUAL);
+      setOptions(fConso, CONSO_GAZ_DUAL);
+      wrapOptions.style.display = "";
+    }else if(t === "PRIMEO"){
+      wrapPuissance.style.display = "";
+      setOptions(fPuissance, PUISSANCE_PRIMEO);
+      fConso.innerHTML = "";
+    }else if(t === "IAG_SEUL"){
+      fPuissance.innerHTML = "";
+      fConso.innerHTML = "";
+      fAssistance.checked = false;
+      fDigitalisation.checked = false;
+    }
+  }
+
+  function kpi(title, value, sub){
+    const el = document.createElement("div");
+    el.className = "kpi";
+    const t = document.createElement("div");
+    t.className = "t";
+    t.textContent = title;
+    const v = document.createElement("div");
+    v.className = "v";
+    v.textContent = value;
+    el.appendChild(t);
+    el.appendChild(v);
+    if(sub){
+      const s = document.createElement("div");
+      s.className = "s";
+      s.textContent = sub;
+      el.appendChild(s);
+    }
+    return el;
+  }
+
+  function renderItem(e){
+    const wrap = document.createElement("div");
+    wrap.className = "item";
+
+    const left = document.createElement("div");
+    left.className = "left";
+
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = e.nom || "(Sans nom)";
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = formatDetails(e);
+
+    left.appendChild(title);
+    left.appendChild(meta);
+
+    const right = document.createElement("div");
+    right.className = "right";
+
+    const tagIag = document.createElement("div");
+    tagIag.className = "tag iag";
+    tagIag.textContent = e.iag ? "IAG: Oui" : "IAG: Non";
+
+    const amount = amountForContract(e);
+    const amt = document.createElement("div");
+    amt.className = "amt";
+    amt.textContent = euro(amount);
+
+    if(e.type === "IAG_SEUL"){
+      const tagZero = document.createElement("div");
+      tagZero.className = "tag zero";
+      tagZero.textContent = "IAG_SEUL = 0€";
+      right.appendChild(tagZero);
+    }
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "smallbtn btn-danger";
+    del.textContent = "Supprimer";
+    del.setAttribute("data-action", "delete");
+    del.setAttribute("data-id", e.id);
+
+    right.appendChild(tagIag);
+    right.appendChild(amt);
+    right.appendChild(del);
+
+    wrap.appendChild(left);
+    wrap.appendChild(right);
+    return wrap;
+  }
+
+  function renderLists(todayEntries, askedDayEntries){
+    const today = todayStr();
+    const asked = dateAnalyse.value;
+
+    listDayEmpty.textContent = "Aucun contrat aujourd’hui (" + today + ").";
+    listAllEmpty.textContent = "Aucun contrat sur " + asked + ".";
+
+    listDay.innerHTML = "";
+    const d = todayEntries.slice().sort(sortDesc);
+    if(d.length === 0){ listDayEmpty.style.display = ""; }
+    else{ listDayEmpty.style.display = "none"; d.forEach(e => listDay.appendChild(renderItem(e))); }
+
+    listAll.innerHTML = "";
+    const q = (filterName && filterName.value ? filterName.value : '').trim().toLowerCase();
+    let a = askedDayEntries.slice().sort(sortDesc);
+    if(q) a = a.filter(e => (e.nom || '').toLowerCase().includes(q));
+
+    if(a.length === 0){ listAllEmpty.style.display = ""; }
+    else{ listAllEmpty.style.display = "none"; a.forEach(e => listAll.appendChild(renderItem(e))); }
+  }
+
+  function energyCount(e){ return e && e.type && e.type !== 'IAG_SEUL' ? 1 : 0; }
+  function iagCount(e){ return e && e.iag ? 1 : 0; }
+
+  function safeFilename(prefix, ext){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const da = String(d.getDate()).padStart(2,'0');
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    const ss = String(d.getSeconds()).padStart(2,'0');
+    return `${prefix}-${y}${m}${da}-${hh}${mm}${ss}.${ext}`;
+  }
+
+  function downloadBlob(filename, blob){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportJSON(){
+    const payload = {
+      format: 'remuneration-debutant-indexeddb',
+      formatVersion: EXPORT_FORMAT,
+      exportedAt: new Date().toISOString(),
+      entries
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+    downloadBlob(safeFilename('remuneration-debutant-backup', 'json'), blob);
+    markBackupNow();
+    toast('Export JSON prêt.', 'ok');
+  }
+
+  function csvCell(v, sep){
+    const s = (v == null) ? '' : String(v);
+    if(/["\n\r]/.test(s) || s.includes(sep)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+
+  function exportCSV(){
+    const sep = getCsvSep();
+    const header = ['id','date','nom','type','puissance','consommation','assistance','digitalisation','iag','montant_eur'];
+    const rows = [header.map(v=>csvCell(v, sep)).join(sep)];
+    for(const e of entries){
+      rows.push([
+        e.id, e.date, e.nom, e.type,
+        e.puissance ?? '', e.consommation ?? '',
+        e.assistance ? '1':'0',
+        e.digitalisation ? '1':'0',
+        e.iag ? '1':'0',
+        (amountForContract(e) || 0).toFixed(2)
+      ].map(v=>csvCell(v, sep)).join(sep));
+    }
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    downloadBlob(safeFilename('remuneration-debutant-export', 'csv'), blob);
+    markBackupNow();
+    toast('Export CSV prêt.', 'ok');
+  }
+
+  function parseImportPayload(text){
+    const parsed = JSON.parse(text);
+    if(Array.isArray(parsed)) return { entries: parsed };
+    if(parsed && typeof parsed === 'object' && Array.isArray(parsed.entries)) return { entries: parsed.entries };
+    throw new Error('Format JSON invalide');
+  }
+
+  function mergeById(existing, incoming){
+    const byId = new Map();
+    existing.forEach(e => byId.set(e.id, e));
+    incoming.forEach(e => byId.set(e.id, e));
+    return Array.from(byId.values());
+  }
+
+  async function importJSONFile(file, mode){
+    const text = await file.text();
+    const {entries: importedRaw} = parseImportPayload(text);
+    const imported = importedRaw.map(normalizeEntry);
+
+    if(mode === 'replace'){
+      if(!window.confirm('Importer en mode Remplacer ?\n\nCela écrase tous les contrats actuels.')) return;
+      entries = imported.slice();
+    }else{
+      entries = mergeById(entries, imported);
+    }
+
+    entries.sort(sortDesc);
+    await idbSetAll(entries);
+    render();
+    toast('Import terminé. Contrats: ' + entries.length, 'ok', 3600);
+  }
+
+  function allYears(){
+    const years = new Set();
+    entries.forEach(e => {
+      if(e && typeof e.date === 'string' && e.date.length >= 4){
+        const y = e.date.slice(0,4);
+        if(/^[0-9]{4}$/.test(y)) years.add(y);
+      }
+    });
+    if(years.size === 0) years.add(String(new Date().getFullYear()));
+    return Array.from(years).sort();
+  }
+
+  function monthLabelsFr(){
+    return ['01 - Jan','02 - Fév','03 - Mar','04 - Avr','05 - Mai','06 - Juin','07 - Juil','08 - Aoû','09 - Sep','10 - Oct','11 - Nov','12 - Déc'];
+  }
+
+  function computeSeries(view, yearStr, monthStr){
+    const year = Number(yearStr);
+    if(!Number.isFinite(year)) return null;
+
+    if(view === 'day'){
+      const m = Number(monthStr);
+      const dim = daysInMonth(year, m);
+      const labels = [];
+      const energy = new Array(dim).fill(0);
+      const iag = new Array(dim).fill(0);
+
+      for(let d=1; d<=dim; d++) labels.push(String(d).padStart(2,'0'));
+
+      const prefix = yearStr + '-' + String(m).padStart(2,'0') + '-';
+      entries.forEach(e => {
+        if(!e || typeof e.date !== 'string') return;
+        if(e.date.startsWith(prefix)){
+          const dayNum = Number(e.date.slice(8,10));
+          if(dayNum>=1 && dayNum<=dim){
+            energy[dayNum-1] += energyCount(e);
+            iag[dayNum-1] += iagCount(e);
+          }
+        }
+      });
+      const total = energy.map((x,i)=> x + iag[i]);
+      return {labels, energy, iag, total, title: `Contrats par jour — ${yearStr}-${String(m).padStart(2,'0')}`};
+    }
+
+    if(view === 'month'){
+      const labels = monthLabelsFr();
+      const energy = new Array(12).fill(0);
+      const iag = new Array(12).fill(0);
+
+      const prefix = yearStr + '-';
+      entries.forEach(e => {
+        if(!e || typeof e.date !== 'string') return;
+        if(e.date.startsWith(prefix) && e.date.length >= 7){
+          const m = Number(e.date.slice(5,7));
+          if(m>=1 && m<=12){
+            energy[m-1] += energyCount(e);
+            iag[m-1] += iagCount(e);
+          }
+        }
+      });
+      const total = energy.map((x,i)=> x + iag[i]);
+      return {labels, energy, iag, total, title: `Contrats par mois — ${yearStr}`};
+    }
+
+    if(view === 'year'){
+      const years = allYears();
+      const labels = years;
+      const energy = new Array(years.length).fill(0);
+      const iag = new Array(years.length).fill(0);
+      const index = new Map(years.map((y,i)=>[y,i]));
+
+      entries.forEach(e => {
+        if(!e || typeof e.date !== 'string' || e.date.length < 4) return;
+        const y = e.date.slice(0,4);
+        if(index.has(y)){
+          const i = index.get(y);
+          energy[i] += energyCount(e);
+          iag[i] += iagCount(e);
+        }
+      });
+      const total = energy.map((x,i)=> x + iag[i]);
+      return {labels, energy, iag, total, title: 'Contrats par année'};
+    }
+
+    return null;
+  }
+
+  function buildInsights(){
+    const dayMap = new Map();
+    entries.forEach(e=>{
+      if(!e || typeof e.date !== 'string') return;
+      const k = e.date;
+      const prev = dayMap.get(k) || {energy:0,iag:0};
+      prev.energy += energyCount(e);
+      prev.iag += iagCount(e);
+      dayMap.set(k, prev);
+    });
+    let bestDay = {k:'—', total:0};
+    for(const [k,v] of dayMap.entries()){
+      const tot = v.energy + v.iag;
+      if(tot > bestDay.total) bestDay = {k, total: tot};
+    }
+
+    const monthMap = new Map();
+    entries.forEach(e=>{
+      if(!e || typeof e.date !== 'string' || e.date.length < 7) return;
+      const k = e.date.slice(0,7);
+      const prev = monthMap.get(k) || {energy:0,iag:0};
+      prev.energy += energyCount(e);
+      prev.iag += iagCount(e);
+      monthMap.set(k, prev);
+    });
+    let bestMonth = {k:'—', total:0};
+    for(const [k,v] of monthMap.entries()){
+      const tot = v.energy + v.iag;
+      if(tot > bestMonth.total) bestMonth = {k, total: tot};
+    }
+
+    const yearMap = new Map();
+    entries.forEach(e=>{
+      if(!e || typeof e.date !== 'string' || e.date.length < 4) return;
+      const k = e.date.slice(0,4);
+      const prev = yearMap.get(k) || {energy:0,iag:0};
+      prev.energy += energyCount(e);
+      prev.iag += iagCount(e);
+      yearMap.set(k, prev);
+    });
+    let bestYear = {k:'—', total:0};
+    for(const [k,v] of yearMap.entries()){
+      const tot = v.energy + v.iag;
+      if(tot > bestYear.total) bestYear = {k, total: tot};
+    }
+
+    return {bestDay, bestMonth, bestYear};
+  }
+
+  function topTypeForMonth(monthEntries){
+    const counts = new Map();
+    for(const e of monthEntries){
+      const t = e.type || '—';
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+    let best = {type:'—', n:0};
+    for(const [t,n] of counts.entries()){
+      if(n > best.n) best = {type:t, n};
+    }
+    return best;
+  }
+
+  function countTotalInRange(endDateStr, days){
+    const end = new Date(endDateStr + 'T00:00:00');
+    const start = new Date(end);
+    start.setDate(start.getDate() - (days - 1));
+    let total = 0;
+    for(const e of entries){
+      if(!e || !e.date) continue;
+      const d = new Date(e.date + 'T00:00:00');
+      if(d >= start && d <= end) total += energyCount(e) + iagCount(e);
+    }
+    return total;
+  }
+
+  function renderInsightsAndGoal(monthTotals){
+    insightsKPIs.innerHTML = '';
+    const ins = buildInsights();
+    insightsKPIs.appendChild(kpi('Meilleur jour', String(ins.bestDay.total), ins.bestDay.k));
+    insightsKPIs.appendChild(kpi('Meilleur mois', String(ins.bestMonth.total), ins.bestMonth.k));
+    insightsKPIs.appendChild(kpi('Meilleure année', String(ins.bestYear.total), ins.bestYear.k));
+
+    const tt = topTypeForMonth(monthTotals.monthEntries);
+    insightsKPIs.appendChild(kpi('Top type (mois)', tt.type, tt.n ? (tt.n + ' occurrence(s)') : '—'));
+
+    const end = dateAnalyse.value;
+    const t7 = countTotalInRange(end, 7);
+    const dPrevEnd = new Date(end + 'T00:00:00');
+    dPrevEnd.setDate(dPrevEnd.getDate() - 7);
+    const endPrevStr = dPrevEnd.toISOString().slice(0,10);
+    const t7prev = countTotalInRange(endPrevStr, 7);
+    const delta = t7 - t7prev;
+
+    insightsKPIs.appendChild(kpi('Total 7 jours', String(t7), end));
+    insightsKPIs.appendChild(kpi('7 jours précédents', String(t7prev), endPrevStr));
+    insightsKPIs.appendChild(kpi('Δ (7j)', (delta >= 0 ? '+' : '') + String(delta)));
+
+    const yyyy = Number(monthTotals.monthStr.slice(0,4));
+    const mm = Number(monthTotals.monthStr.slice(5,7));
+    const dim = daysInMonth(yyyy, mm);
+    const dayNum = Number(monthTotals.dayStr.slice(8,10));
+    const pace = (dayNum > 0) ? (monthTotals.totalContratsMois / dayNum) : 0;
+    const proj = Math.round(pace * dim);
+    insightsKPIs.appendChild(kpi('Projection fin de mois', String(proj), 'Selon le rythme actuel'));
+
+    const goal = Number(goalMonthly.value);
+    if(!Number.isFinite(goal) || goal <= 0){
+      goalProgressText.textContent = `Mois ${monthTotals.monthStr}: ${monthTotals.totalContratsMois} / —`;
+      goalProgressPct.textContent = '—';
+      return;
+    }
+    const pct = Math.min(999, (monthTotals.totalContratsMois / goal) * 100);
+    goalProgressText.textContent = `Mois ${monthTotals.monthStr}: ${monthTotals.totalContratsMois} / ${goal}`;
+    goalProgressPct.textContent = pct.toFixed(1).replace('.', ',') + ' %';
+  }
+
+  function monthTypeDistribution(monthEntries){
+    const counts = new Map();
+    for(const e of monthEntries){
+      const t = e.type || '—';
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+    const labels = Array.from(counts.keys());
+    const data = labels.map(l => counts.get(l) || 0);
+    return {labels, data};
+  }
+
+  function renderTypeChart(monthEntries){
+    if(!typeChartCanvas) return;
+    if(!window.Chart){
+      typeChartNote.textContent = 'Chart.js non chargé.';
+      return;
+    }
+
+    const dist = monthTypeDistribution(monthEntries);
+    if(dist.labels.length === 0){
+      typeChartNote.textContent = 'Aucune donnée pour le mois.';
+      if(typeChartInstance){ typeChartInstance.destroy(); typeChartInstance = null; }
+      return;
+    }
+
+    const colors = [
+      'rgba(110,231,255,0.90)',
+      'rgba(124,255,178,0.85)',
+      'rgba(255,209,102,0.85)',
+      'rgba(255,107,107,0.82)',
+      'rgba(189,147,249,0.82)',
+      'rgba(255,140,105,0.82)',
+      'rgba(130,170,255,0.82)',
+    ];
+
+    if(typeChartInstance){ typeChartInstance.destroy(); typeChartInstance = null; }
+
+    typeChartInstance = new window.Chart(typeChartCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: dist.labels,
+        datasets: [{
+          data: dist.data,
+          backgroundColor: dist.labels.map((_,i)=> colors[i % colors.length]),
+          borderColor: 'rgba(0,0,0,0)',
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') || '#eef1f7' } }
+        }
+      }
+    });
+
+    const total = dist.data.reduce((a,b)=>a+b,0);
+    typeChartNote.textContent = 'Total mois: ' + total + ' contrat(s).';
+  }
+
+  function renderChart(){
+    const view = chartView.value;
+    wrapChartMonth.style.display = (view === 'day') ? '' : 'none';
+
+    const years = allYears();
+    (function setSel(el, values, selected){
+      el.innerHTML = '';
+      values.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+      if(selected && values.includes(selected)) el.value = selected;
+    })(chartYear, years, chartYear.value || years[years.length-1]);
+
+    const months = Array.from({length:12}, (_,i)=> String(i+1).padStart(2,'0'));
+    (function setSel(el, values, selected){
+      el.innerHTML = '';
+      values.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+      if(selected && values.includes(selected)) el.value = selected;
+    })(chartMonth, months, chartMonth.value || String(new Date().getMonth()+1).padStart(2,'0'));
+
+    const series = computeSeries(view, chartYear.value, chartMonth.value);
+    if(!series){ chartNote.textContent = 'Impossible de calculer la série.'; return; }
+
+    const m = chartMetric.value;
+    const showStack = (m === 'stack');
+    const showTotal = (m === 'total');
+    const showEnergy = (m === 'energy');
+    const showIag = (m === 'iag');
+
+    let datasets = [];
+    const totalColor = 'rgba(110,231,255,0.95)';
+    const energyColor = 'rgba(124,255,178,0.85)';
+    const iagColor = 'rgba(255,209,102,0.85)';
+
+    if(showStack){
+      datasets = [
+        {label:'Énergie', data: series.energy, backgroundColor: energyColor, borderColor: energyColor, borderWidth: 1, type:'bar', stack:'s1'},
+        {label:'IAG', data: series.iag, backgroundColor: iagColor, borderColor: iagColor, borderWidth: 1, type:'bar', stack:'s1'},
+        {label:'Total', data: series.total, borderColor: totalColor, backgroundColor: 'rgba(110,231,255,0.15)', borderWidth: 2, pointRadius: 2, type:'line', tension: 0.25}
+      ];
+    }else if(showTotal){
+      datasets = [
+        {label:'Total', data: series.total, borderColor: totalColor, backgroundColor: 'rgba(110,231,255,0.15)', borderWidth: 2, pointRadius: 2, type:'line', tension: 0.25}
+      ];
+    }else if(showEnergy){
+      datasets = [{label:'Énergie', data: series.energy, backgroundColor: energyColor, borderColor: energyColor, borderWidth: 1, type:'bar'}];
+    }else if(showIag){
+      datasets = [{label:'IAG', data: series.iag, backgroundColor: iagColor, borderColor: iagColor, borderWidth: 1, type:'bar'}];
+    }
+
+    chartNote.textContent = series.title;
+
+    if(chartInstance){ chartInstance.destroy(); chartInstance = null; }
+
+    if(!window.Chart){
+      chartNote.textContent = 'Chart.js non chargé (vérifie que chart.umd.min.js est à côté du HTML).';
+      return;
+    }
+
+    const cssText = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#eef1f7';
+    const cssMuted = getComputedStyle(document.documentElement).getPropertyValue('--muted') || 'rgba(238,241,247,0.8)';
+
+    chartInstance = new window.Chart(chartCanvas.getContext('2d'), {
+      data: { labels: series.labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { labels: { color: cssText.trim() } } },
+        scales: {
+          x: { ticks: { color: cssMuted.trim() }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          y: { beginAtZero: true, ticks: { precision: 0, color: cssMuted.trim() }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        }
+      }
+    });
+  }
+
+  function render(){
+    storageStatus.textContent = 'Stockage: IndexedDB (base "' + DB_NAME + '") • ' + entries.length + ' contrat(s)';
+    pillDate.textContent = dateAnalyse.value;
+
+    const m = computeAll(entries, dateAnalyse.value);
+
+    dayKPIs.innerHTML = '';
+    dayKPIs.appendChild(kpi('Contrats énergie', String(m.dayEnergy.length)));
+    dayKPIs.appendChild(kpi('IAG (jour)', String(m.nbIAGJour)));
+    dayKPIs.appendChild(kpi('Total contrats', String(m.totalContratsJour)));
+    dayKPIs.appendChild(kpi('Gains contrats', euro(m.gainsContratsJour)));
+    dayKPIs.appendChild(kpi('Gains IAG', euro(m.gainIAGJour), 'Tarif IAG: ' + euro(m.tarifIAG) + ' / IAG'));
+    dayKPIs.appendChild(kpi('Total jour', euro(m.totalJour)));
+    dayNote.textContent = 'Date analysée: ' + m.dayStr;
+
+    monthKPIs.innerHTML = '';
+    monthKPIs.appendChild(kpi('Contrats énergie', String(m.monthEnergy.length)));
+    monthKPIs.appendChild(kpi('IAG (mois)', String(m.nbIAGMois)));
+    monthKPIs.appendChild(kpi('Total contrats', String(m.totalContratsMois)));
+    monthKPIs.appendChild(kpi('% IAG', (m.pctIAG).toFixed(1).replace('.', ',') + ' %'));
+    monthKPIs.appendChild(kpi('Tarif IAG (mois)', euro(m.tarifIAG) + ' / IAG'));
+    monthKPIs.appendChild(kpi('Total mois', euro(m.totalMois), 'Contrats: ' + euro(m.gainsContratsMois) + ' • IAG: ' + euro(m.gainIAGMois)));
+    monthNote.textContent = 'Mois analysé: ' + m.monthStr;
+
+    const today = todayStr();
+    const todayEntries = entries.filter(e => e.date === today);
+    renderLists(todayEntries, m.dayEntries);
+
+    renderInsightsAndGoal(m);
+    renderChart();
+    renderTypeChart(m.monthEntries);
+  }
+
+  // Insights UI
+  function renderInsightsAndGoal(m){
+    insightsKPIs.innerHTML = '';
+    const ins = buildInsights();
+    insightsKPIs.appendChild(kpi('Meilleur jour', String(ins.bestDay.total), ins.bestDay.k));
+    insightsKPIs.appendChild(kpi('Meilleur mois', String(ins.bestMonth.total), ins.bestMonth.k));
+    insightsKPIs.appendChild(kpi('Meilleure année', String(ins.bestYear.total), ins.bestYear.k));
+
+    const tt = topTypeForMonth(m.monthEntries);
+    insightsKPIs.appendChild(kpi('Top type (mois)', tt.type, tt.n ? (tt.n + ' occurrence(s)') : '—'));
+
+    const end = dateAnalyse.value;
+    const t7 = countTotalInRange(end, 7);
+    const dPrevEnd = new Date(end + 'T00:00:00');
+    dPrevEnd.setDate(dPrevEnd.getDate() - 7);
+    const endPrevStr = dPrevEnd.toISOString().slice(0,10);
+    const t7prev = countTotalInRange(endPrevStr, 7);
+    const delta = t7 - t7prev;
+
+    insightsKPIs.appendChild(kpi('Total 7 jours', String(t7), end));
+    insightsKPIs.appendChild(kpi('7 jours précédents', String(t7prev), endPrevStr));
+    insightsKPIs.appendChild(kpi('Δ (7j)', (delta >= 0 ? '+' : '') + String(delta)));
+
+    const yyyy = Number(m.monthStr.slice(0,4));
+    const mm = Number(m.monthStr.slice(5,7));
+    const dim = daysInMonth(yyyy, mm);
+    const dayNum = Number(m.dayStr.slice(8,10));
+    const pace = (dayNum > 0) ? (m.totalContratsMois / dayNum) : 0;
+    const proj = Math.round(pace * dim);
+    insightsKPIs.appendChild(kpi('Projection fin de mois', String(proj), 'Selon le rythme actuel'));
+
+    const goal = Number(goalMonthly.value);
+    if(!Number.isFinite(goal) || goal <= 0){
+      goalProgressText.textContent = `Mois ${m.monthStr}: ${m.totalContratsMois} / —`;
+      goalProgressPct.textContent = '—';
+      return;
+    }
+    const pct = Math.min(999, (m.totalContratsMois / goal) * 100);
+    goalProgressText.textContent = `Mois ${m.monthStr}: ${m.totalContratsMois} / ${goal}`;
+    goalProgressPct.textContent = pct.toFixed(1).replace('.', ',') + ' %';
+  }
+
+  // State
+  let entries = [];
+  let chartInstance = null;
+  let typeChartInstance = null;
+
+  async function init(){
+    addForm.noValidate = true;
+    const t = todayStr();
+    dateAnalyse.value = t;
+    fDate.value = t;
+
+    // Load settings
+    try{
+      const th = localStorage.getItem(KEY_THEME) || 'auto';
+      themeSelect.value = (th === 'dark' || th === 'light' || th === 'auto') ? th : 'auto';
+      setTheme(themeSelect.value);
+    }catch(e){}
+
+    try{
+      const sep = localStorage.getItem(KEY_CSV_SEP) || ';';
+      csvSeparator.value = (sep === ',' ? ',' : ';');
+    }catch(e){}
+
+    try{
+      const savedGoal = Number(window.localStorage.getItem(KEY_GOAL_MONTHLY));
+      if(Number.isFinite(savedGoal) && savedGoal >= 0) goalMonthly.value = String(savedGoal);
+    }catch(e){}
+
+    try{
+      const all = await idbGetAll();
+      entries = (all || []).map(normalizeEntry).sort(sortDesc);
+    }catch(e){ entries = []; }
+
+    updateConditionalFields();
+    render();
+
+    setTimeout(maybeRemindBackup, 600);
+  }
+
+  // Events
+  dateAnalyse.addEventListener('change', function(){ render(); });
+  btnFillToday.addEventListener('click', function(){ fDate.value = dateAnalyse.value; fDate.focus(); });
+  fType.addEventListener('change', function(){ updateConditionalFields(); });
+
+  chartView.addEventListener('change', function(){ renderChart(); });
+  chartYear.addEventListener('change', function(){ renderChart(); });
+  chartMonth.addEventListener('change', function(){ renderChart(); });
+  chartMetric.addEventListener('change', function(){ renderChart(); });
+
+  filterName.addEventListener('input', function(){ render(); });
+
+  themeSelect.addEventListener('change', function(){
+    setTheme(themeSelect.value);
+    toast('Thème appliqué.', 'ok', 1600);
+    render();
+  });
+
+  csvSeparator.addEventListener('change', function(){
+    const sep = getCsvSep();
+    try{ localStorage.setItem(KEY_CSV_SEP, sep); }catch(e){}
+    toast('Séparateur CSV enregistré.', 'ok', 1600);
+  });
+
+  goalMonthly.addEventListener('change', function(){
+    const v = Number(goalMonthly.value);
+    if(!Number.isFinite(v) || v < 0){
+      goalMonthly.value = '';
+      window.localStorage.removeItem(KEY_GOAL_MONTHLY);
+      toast('Objectif supprimé.', 'info', 1800);
+    } else {
+      const vv = Math.floor(v);
+      window.localStorage.setItem(KEY_GOAL_MONTHLY, String(vv));
+      goalMonthly.value = String(vv);
+      toast('Objectif enregistré.', 'ok', 1600);
+    }
+    render();
+  });
+
+  addForm.addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    clearErr();
+
+    const date = String(fDate.value || '').trim();
+    const nom = clampText(fNom.value);
+    const type = String(fType.value || '').trim();
+
+    if(!date){ showErr('La date est obligatoire.'); return; }
+    if(!nom){ showErr('Le nom est obligatoire.'); return; }
+    if(!TYPES.includes(type)){ showErr('Type invalide.'); return; }
+
+    const dd = new Date(date + 'T00:00:00');
+    if(Number.isNaN(dd.getTime())){ showErr('Date invalide (YYYY-MM-DD).'); return; }
+
+    let puissance = null, consommation = null;
+
+    if(type === 'PLEN_ELEC'){
+      puissance = String(fPuissance.value || '').trim();
+      if(!PUISSANCE_ELEC_DUAL.includes(puissance)){ showErr('Puissance invalide (PLEN_ELEC).'); return; }
+    }else if(type === 'PLEN_GAZ'){
+      consommation = String(fConso.value || '').trim();
+      if(!CONSO_GAZ_DUAL.includes(consommation)){ showErr('Consommation invalide (PLEN_GAZ).'); return; }
+    }else if(type === 'PLEN_DUAL'){
+      puissance = String(fPuissance.value || '').trim();
+      consommation = String(fConso.value || '').trim();
+      if(!PUISSANCE_ELEC_DUAL.includes(puissance)){ showErr('Puissance invalide (PLEN_DUAL).'); return; }
+      if(!CONSO_GAZ_DUAL.includes(consommation)){ showErr('Consommation invalide (PLEN_DUAL).'); return; }
+    }else if(type === 'PRIMEO'){
+      puissance = String(fPuissance.value || '').trim();
+      if(!PUISSANCE_PRIMEO.includes(puissance)){ showErr('Puissance invalide (PRIMEO).'); return; }
+    }
+
+    const assistance = !!fAssistance.checked;
+    const digitalisation = !!fDigitalisation.checked;
+
+    let iag = (String(fIAG.value) === 'true');
+    if(type === 'IAG_SEUL') iag = true;
+
+    const entry = normalizeEntry({ id: uid(), date, nom, type, puissance, consommation, assistance, digitalisation, iag });
+
+    entries.push(entry);
+    entries.sort(sortDesc);
+    await idbAdd(entry);
+
+    fNom.value = '';
+    fIAG.value = (entry.type === 'IAG_SEUL') ? 'true' : 'false';
+    fAssistance.checked = false;
+    fDigitalisation.checked = false;
+
+    updateConditionalFields();
+    render();
+    toast('Contrat ajouté.', 'ok', 1600);
+    fNom.focus();
+  });
+
+  function onListClick(ev){
+    const t = ev.target;
+    if(!(t instanceof HTMLElement)) return;
+    if(t.getAttribute('data-action') !== 'delete') return;
+    const id = t.getAttribute('data-id');
+    if(!id) return;
+
+    const e = entries.find(x => x.id === id);
+    const label = e ? (e.nom + ' • ' + e.date + ' • ' + e.type) : id;
+    if(!window.confirm('Supprimer ce contrat ?\n\n' + label)) return;
+
+    entries = entries.filter(x => x.id !== id);
+    idbDelete(id).catch(()=>{});
+    render();
+    toast('Contrat supprimé.', 'info', 1600);
+  }
+  listDay.addEventListener('click', onListClick);
+  listAll.addEventListener('click', onListClick);
+
+  btnDeleteDay.addEventListener('click', async function(){
+    const d = dateAnalyse.value;
+    const n = entries.filter(e => e.date === d).length;
+    if(n === 0){ toast('Aucun contrat à supprimer sur ' + d + '.', 'info', 2200); return; }
+    if(!window.confirm('Supprimer TOUS les contrats du ' + d + ' ?\n\nNombre: ' + n)) return;
+    entries = entries.filter(e => e.date !== d);
+    await idbSetAll(entries);
+    render();
+    toast('Jour supprimé (' + d + ').', 'warn', 2600);
+  });
+
+  btnClearAll.addEventListener('click', async function(){
+    if(entries.length === 0){ toast('Aucun contrat à effacer.', 'info', 2200); return; }
+    if(!window.confirm('Tout effacer ?\n\nCette action supprime ' + entries.length + ' entrée(s).')) return;
+    entries = [];
+    await idbSetAll(entries);
+    render();
+    toast('Tout a été effacé.', 'warn', 2600);
+  });
+
+  btnExport.addEventListener('click', exportJSON);
+  btnExportCsv.addEventListener('click', exportCSV);
+  btnImport.addEventListener('click', function(){ importFile.value = ''; importFile.click(); });
+  importFile.addEventListener('change', function(){
+    const file = importFile.files && importFile.files[0];
+    if(!file) return;
+    importJSONFile(file, importMode.value).catch(err => {
+      window.alert('Erreur import: ' + (err && err.message ? err.message : String(err)));
+    });
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>
