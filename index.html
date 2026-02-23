@@ -707,7 +707,7 @@
     <!-- Tab Contrats -->
     <div id="tab-contrats" class="tab-content active">
       <div class="card">
-        <h2>➕ Ajouter un contrat</h2>
+        <h2 id="formTitle">➕ Ajouter un contrat</h2>
         <form id="addContractForm">
           <div class="form-row">
             <div class="form-group sm">
@@ -781,8 +781,9 @@
           <div class="alert alert-error" id="formError"></div>
 
           <div class="btn-row">
-            <button type="submit" class="btn-primary">➕ Ajouter le contrat</button>
+            <button type="submit" class="btn-primary" id="btnSubmitContract">➕ Ajouter le contrat</button>
             <button type="button" class="btn-ghost" id="btnClearForm">🔄 Réinitialiser</button>
+            <button type="button" class="btn-danger" id="btnCancelEdit" style="display:none;">✖ Annuler édition</button>
           </div>
         </form>
       </div>
@@ -941,6 +942,7 @@
         <div class="btn-row">
           <button type="button" id="btnGenerateWeek" class="btn-primary">📄 Générer export semaine</button>
           <button type="button" id="btnCopyWeek" class="btn-ghost">📋 Copier</button>
+          <button type="button" id="btnGenerateWeekCompact" class="btn-ghost">🧾 Récap compact</button>
         </div>
         <div id="weekExportPreview" class="export-preview" style="margin-top:16px;"></div>
       </div>
@@ -956,6 +958,7 @@
         <div class="btn-row">
           <button type="button" id="btnGenerateMonth" class="btn-primary">📄 Générer export mois</button>
           <button type="button" id="btnCopyMonth" class="btn-ghost">📋 Copier</button>
+          <button type="button" id="btnGenerateMonthCompact" class="btn-ghost">🧾 Récap compact</button>
         </div>
         <div id="monthExportPreview" class="export-preview" style="margin-top:16px;"></div>
       </div>
@@ -1059,6 +1062,9 @@
       let contracts = [];
       let currentTab = 'contrats';
 
+      // Edit state
+      let editingId = null;
+
       // ========== DOM Elements ==========
       const $ = (sel) => document.querySelector(sel);
       const $$ = (sel) => document.querySelectorAll(sel);
@@ -1072,6 +1078,10 @@
       const tabContents = $$('.tab-content');
 
       // Form
+      const formTitle = $('#formTitle');
+      const btnSubmitContract = $('#btnSubmitContract');
+      const btnCancelEdit = $('#btnCancelEdit');
+
       const addContractForm = $('#addContractForm');
       const contractDate = $('#contractDate');
       const contractName = $('#contractName');
@@ -1137,6 +1147,8 @@
       const btnGenerateMonth = $('#btnGenerateMonth');
       const btnCopyWeek = $('#btnCopyWeek');
       const btnCopyMonth = $('#btnCopyMonth');
+      const btnGenerateWeekCompact = $('#btnGenerateWeekCompact');
+      const btnGenerateMonthCompact = $('#btnGenerateMonthCompact');
       const weekExportPreview = $('#weekExportPreview');
       const monthExportPreview = $('#monthExportPreview');
       const btnExportJSON = $('#btnExportJSON');
@@ -1236,24 +1248,11 @@
         });
       }
 
-      function downloadText(filename, text, mime = 'text/plain') {
-        const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }
-
       async function copyToClipboard(text) {
         try {
           await navigator.clipboard.writeText(text);
           showToast('Copié dans le presse-papier', 'success');
         } catch {
-          // fallback
           const ta = document.createElement('textarea');
           ta.value = text;
           document.body.appendChild(ta);
@@ -1276,6 +1275,7 @@
               store.createIndex('date', 'date', { unique: false });
               store.createIndex('provider', 'provider', { unique: false });
               store.createIndex('type', 'type', { unique: false });
+              store.createIndex('reference', 'reference', { unique: false });
             }
           };
 
@@ -1363,8 +1363,50 @@
         return amount;
       }
 
-      function filterContracts(contracts, filters) {
-        return contracts.filter(c => {
+      function computeStats(contractsSubset) {
+        const stats = {
+          total: contractsSubset.length,
+          energy: 0,
+          iag: 0,
+          plenitude: 0,
+          primeo: 0,
+          byType: {},
+          energyAmount: 0,
+          iagAmount: 0,
+          totalAmount: 0
+        };
+
+        contractsSubset.forEach(c => {
+          const hasIag = String(c.type).startsWith('IAG_') || !!c.iagType;
+          if (hasIag) stats.iag++;
+          if (!String(c.type).startsWith('IAG_')) stats.energy++;
+
+          if (c.provider === 'PLENITUDE') stats.plenitude++;
+          if (c.provider === 'PRIMEO') stats.primeo++;
+
+          const typeKey = c.type + (c.type === 'DUAL' ? `_${c.power}_${c.conso}` : '');
+          stats.byType[typeKey] = (stats.byType[typeKey] || 0) + 1;
+
+          const a = calculateAmount(c);
+          stats.energyAmount += a;
+        });
+
+        const iagTarif = getIAGTarif(stats.iag);
+        stats.iagAmount = stats.iag * iagTarif;
+        stats.totalAmount = stats.energyAmount + stats.iagAmount;
+
+        return stats;
+      }
+
+      function contractTypeLabel(c) {
+        if (String(c.type).startsWith('IAG_')) return `IAG ${String(c.type).split('_')[1]}`;
+        if (c.type === 'DUAL') return `Dual ${c.power}/${c.conso}`;
+        if (String(c.type).startsWith('PRIMEO_')) return c.type.replace(/PRIMEO_/, 'Primeo ').replace(/_/g, ' ');
+        return String(c.type).replace(/_/g, ' ');
+      }
+
+      function filterContracts(list, filters) {
+        return list.filter(c => {
           if (filters.search) {
             const search = filters.search.toLowerCase();
             const name = (c.name || '').toLowerCase();
@@ -1378,48 +1420,17 @@
         });
       }
 
-      function getContractsByPeriod(contracts, startDate, endDate) {
-        return contracts.filter(c => c.date >= startDate && c.date <= endDate);
+      function getContractsByPeriod(list, startDate, endDate) {
+        return list.filter(c => c.date >= startDate && c.date <= endDate);
       }
 
-      function computeStats(contracts) {
-        const stats = {
-          total: contracts.length,
-          energy: 0,
-          iag: 0,
-          plenitude: 0,
-          primeo: 0,
-          byType: {},
-          totalAmount: 0,
-          iagAmount: 0
-        };
-
-        contracts.forEach(c => {
-          const hasIag = String(c.type).startsWith('IAG_') || !!c.iagType; // count IAG contracts + energy contracts tagged with IAG
-          if (hasIag) stats.iag++;
-          if (!String(c.type).startsWith('IAG_')) stats.energy++;
-
-          if (c.provider === 'PLENITUDE') stats.plenitude++;
-          if (c.provider === 'PRIMEO') stats.primeo++;
-
-          const typeKey = c.type + (c.type === 'DUAL' ? `_${c.power}_${c.conso}` : '');
-          stats.byType[typeKey] = (stats.byType[typeKey] || 0) + 1;
-
-          stats.totalAmount += calculateAmount(c);
+      function groupByDate(list) {
+        const map = {};
+        list.forEach(c => {
+          map[c.date] = map[c.date] || [];
+          map[c.date].push(c);
         });
-
-        const iagTarif = getIAGTarif(stats.iag);
-        stats.iagAmount = stats.iag * iagTarif;
-        stats.totalAmount += stats.iagAmount;
-
-        return stats;
-      }
-
-      function contractTypeLabel(c) {
-        if (String(c.type).startsWith('IAG_')) return `IAG ${String(c.type).split('_')[1]}`;
-        if (c.type === 'DUAL') return `Dual ${c.power}/${c.conso}`;
-        if (String(c.type).startsWith('PRIMEO_')) return c.type.replace(/PRIMEO_/, 'Primeo ').replace(/_/g, ' ');
-        return String(c.type).replace(/_/g, ' ');
+        return map;
       }
 
       function buildWeekExportText(dateStr) {
@@ -1431,7 +1442,7 @@
         lines.push(`Semaine ${week.week} (${formatDate(week.start)} → ${formatDate(week.end)})`);
         lines.push(`Total contrats: ${stats.total} | Energie: ${stats.energy} | IAG: ${stats.iag}`);
         lines.push(`Plenitude: ${stats.plenitude} | Primeo: ${stats.primeo}`);
-        lines.push(`Total rémunération: ${formatEuro(stats.totalAmount)} (IAG: ${formatEuro(stats.iagAmount)})`);
+        lines.push(`€ Energie: ${formatEuro(stats.energyAmount)} | € IAG: ${formatEuro(stats.iagAmount)} | € Total: ${formatEuro(stats.totalAmount)}`);
         lines.push('');
         lines.push('Détail contrats:');
 
@@ -1454,6 +1465,32 @@
         return lines.join('\n');
       }
 
+      function buildWeekExportCompactText(dateStr) {
+        const week = getWeekRange(dateStr);
+        const weekContracts = getContractsByPeriod(contracts, week.start, week.end);
+        const byDate = groupByDate(weekContracts);
+
+        const lines = [];
+        lines.push(`Récap Semaine ${week.week} (${formatDate(week.start)} → ${formatDate(week.end)})`);
+        lines.push('');
+
+        const dates = Object.keys(byDate).sort();
+        if (dates.length === 0) {
+          lines.push('- Aucun contrat');
+          return lines.join('\n');
+        }
+
+        dates.forEach(ds => {
+          const st = computeStats(byDate[ds]);
+          lines.push(`${formatDate(ds)} : ${st.total} contrats (E:${st.energy} / I:${st.iag}) | €E ${formatEuro(st.energyAmount)} | €I ${formatEuro(st.iagAmount)} | €T ${formatEuro(st.totalAmount)}`);
+        });
+
+        const total = computeStats(weekContracts);
+        lines.push('');
+        lines.push(`TOTAL : ${total.total} contrats | €E ${formatEuro(total.energyAmount)} | €I ${formatEuro(total.iagAmount)} | €T ${formatEuro(total.totalAmount)}`);
+        return lines.join('\n');
+      }
+
       function buildMonthExportText(dateStr) {
         const monthStr = dateStr.slice(0,7);
         const monthContracts = contracts.filter(c => c.date.startsWith(monthStr));
@@ -1464,7 +1501,7 @@
         lines.push(`Total contrats: ${stats.total} | Energie: ${stats.energy} | IAG: ${stats.iag} (${stats.total>0?((stats.iag/stats.total)*100).toFixed(1):0}%)`);
         lines.push(`Plenitude: ${stats.plenitude} | Primeo: ${stats.primeo}`);
         lines.push(`Tarif IAG: ${formatEuro(getIAGTarif(stats.iag))} par IAG`);
-        lines.push(`Total rémunération: ${formatEuro(stats.totalAmount)} (IAG: ${formatEuro(stats.iagAmount)})`);
+        lines.push(`€ Energie: ${formatEuro(stats.energyAmount)} | € IAG: ${formatEuro(stats.iagAmount)} | € Total: ${formatEuro(stats.totalAmount)}`);
         lines.push('');
         lines.push('Détail contrats:');
 
@@ -1487,6 +1524,30 @@
         return lines.join('\n');
       }
 
+      function buildMonthExportCompactText(dateStr) {
+        const monthStr = dateStr.slice(0,7);
+        const monthContracts = contracts.filter(c => c.date.startsWith(monthStr));
+        const stats = computeStats(monthContracts);
+
+        const lines = [];
+        lines.push(`Récap Mois: ${getMonthLabel(dateStr)}`);
+        lines.push(`Total: ${stats.total} | €E ${formatEuro(stats.energyAmount)} | €I ${formatEuro(stats.iagAmount)} | €T ${formatEuro(stats.totalAmount)}`);
+        lines.push('');
+
+        const byType = Object.entries(stats.byType).sort((a,b)=>b[1]-a[1]);
+        if (byType.length === 0) {
+          lines.push('- Aucun contrat');
+          return lines.join('\n');
+        }
+
+        byType.forEach(([typeKey, count]) => {
+          const pct = stats.total > 0 ? (count / stats.total * 100) : 0;
+          lines.push(`${typeKey.replace(/_/g,' ')} : ${count} (${pct.toFixed(1)}%)`);
+        });
+
+        return lines.join('\n');
+      }
+
       function toCSV(rows) {
         const esc = (v) => {
           const s = String(v ?? '');
@@ -1494,6 +1555,54 @@
           return s;
         };
         return rows.map(r => r.map(esc).join(';')).join('\n');
+      }
+
+      function normalizeReference(ref) {
+        return String(ref || '').trim().toLowerCase();
+      }
+
+      function isDuplicateReference(reference, exceptId = null) {
+        const refNorm = normalizeReference(reference);
+        if (!refNorm) return false;
+        return contracts.some(c => normalizeReference(c.reference) === refNorm && c.id !== exceptId);
+      }
+
+      function setEditMode(id) {
+        editingId = id;
+        formTitle.textContent = '✏️ Modifier un contrat';
+        btnSubmitContract.textContent = '💾 Enregistrer modifications';
+        btnCancelEdit.style.display = '';
+      }
+
+      function clearEditMode() {
+        editingId = null;
+        formTitle.textContent = '➕ Ajouter un contrat';
+        btnSubmitContract.textContent = '➕ Ajouter le contrat';
+        btnCancelEdit.style.display = 'none';
+      }
+
+      function fillFormFromContract(c) {
+        contractDate.value = c.date;
+        contractName.value = c.name || '';
+        contractRef.value = c.reference || '';
+
+        contractProvider.value = c.provider || '';
+        contractType.dataset.provider = '';
+        updateFormFields();
+
+        contractType.value = c.type || '';
+        updateFormFields();
+
+        contractAxa.checked = !!c.axa;
+        contractDigi.checked = !!c.digitalisation;
+
+        if (c.type === 'DUAL') {
+          contractPower.value = c.power || DUAL_POWER[0];
+          contractConso.value = c.conso || DUAL_CONSO[0];
+        }
+
+        contractIagType.value = c.iagType || '';
+        contractIagRef.value = c.iagReference || '';
       }
 
       // ========== Form Management ==========
@@ -1540,7 +1649,6 @@
           return;
         }
 
-        // Only repopulate when provider changes (avoid resetting type unexpectedly)
         if (contractType.dataset.provider !== provider) {
           populateTypeOptions(provider);
           contractType.dataset.provider = provider;
@@ -1559,7 +1667,6 @@
           optionsGroup.style.display = '';
         }
 
-        // Show IAG selector only for energy (not for IAG contracts themselves)
         if (!String(type).startsWith('IAG_')) {
           iagGroup.style.display = '';
         }
@@ -1571,13 +1678,17 @@
       });
       contractType.addEventListener('change', updateFormFields);
 
-      btnClearForm.addEventListener('click', () => {
+      function resetFormUI() {
         addContractForm.reset();
         contractDate.value = todayStr();
         contractType.dataset.provider = '';
         updateFormFields();
         clearError();
-      });
+        clearEditMode();
+      }
+
+      btnClearForm.addEventListener('click', resetFormUI);
+      btnCancelEdit.addEventListener('click', resetFormUI);
 
       addContractForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1596,8 +1707,14 @@
           return;
         }
 
-        const contract = {
-          id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        // Dedup check (except current contract when editing)
+        if (isDuplicateReference(reference, editingId)) {
+          const ok = confirm('⚠️ Doublon détecté : cette référence existe déjà. Continuer quand même ?');
+          if (!ok) return;
+        }
+
+        const base = {
+          id: editingId || (Date.now() + '_' + Math.random().toString(36).substr(2, 9)),
           date,
           name,
           reference,
@@ -1612,48 +1729,50 @@
         };
 
         if (type === 'DUAL') {
-          contract.power = contractPower.value;
-          contract.conso = contractConso.value;
-          if (!contract.power || !contract.conso) {
+          base.power = contractPower.value;
+          base.conso = contractConso.value;
+          if (!base.power || !base.conso) {
             showError('Veuillez sélectionner la puissance et la consommation.');
             return;
           }
-          contract.axa = contractAxa.checked;
-          contract.digitalisation = contractDigi.checked;
+          base.axa = contractAxa.checked;
+          base.digitalisation = contractDigi.checked;
         } else if (['ELEC_3', 'ELEC_6', 'ELEC_9', 'ELEC_12', 'PRIMEO_ELEC_6', 'PRIMEO_ELEC_9', 'PRIMEO_ELEC_12'].includes(type)) {
-          contract.axa = contractAxa.checked;
-          contract.digitalisation = contractDigi.checked;
+          base.axa = contractAxa.checked;
+          base.digitalisation = contractDigi.checked;
         }
 
-        // IAG reference: required only when you tag an energy contract with IAG type
         if (!String(type).startsWith('IAG_') && iagTypeSelected && !iagReferenceInput) {
           showError('Veuillez saisir la référence IAG.');
           return;
         }
 
         if (!String(type).startsWith('IAG_') && iagTypeSelected) {
-          contract.iagType = iagTypeSelected;
-          contract.iagReference = iagReferenceInput ? iagReferenceInput : null;
+          base.iagType = iagTypeSelected;
+          base.iagReference = iagReferenceInput ? iagReferenceInput : null;
         }
 
-        // For pure IAG contracts: set provider to PLENITUDE (for stats split) and store type
         if (String(type).startsWith('IAG_')) {
-          contract.provider = 'PLENITUDE';
+          base.provider = 'PLENITUDE';
         }
 
         try {
-          await saveContract(contract);
-          contracts.push(contract);
-          contracts.sort((a, b) => b.date.localeCompare(a.date));
+          await saveContract(base);
 
-          showToast('✅ Contrat ajouté avec succès', 'success');
-          addContractForm.reset();
-          contractDate.value = todayStr();
-          contractType.dataset.provider = '';
-          updateFormFields();
+          const existingIdx = contracts.findIndex(c => c.id === base.id);
+          if (existingIdx >= 0) {
+            contracts[existingIdx] = base;
+            showToast('✅ Contrat modifié', 'success');
+          } else {
+            contracts.push(base);
+            showToast('✅ Contrat ajouté avec succès', 'success');
+          }
+
+          contracts.sort((a, b) => b.date.localeCompare(a.date));
+          resetFormUI();
           renderAll();
         } catch (err) {
-          showError('Erreur lors de l\'ajout du contrat : ' + err.message);
+          showError('Erreur lors de l\'enregistrement : ' + err.message);
         }
       });
 
@@ -1696,13 +1815,30 @@
         amount.className = 'amount';
         amount.textContent = formatEuro(calculateAmount(contract));
 
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-sm btn-ghost';
+        editBtn.textContent = '✏️';
+        editBtn.title = 'Modifier';
+        editBtn.onclick = () => {
+          setEditMode(contract.id);
+          fillFormFromContract(contract);
+          showToast('Mode édition activé', 'info');
+          // Switch to contracts tab if needed
+          if (currentTab !== 'contrats') {
+            document.querySelector('.tab-btn[data-tab="contrats"]').click();
+          }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn-sm btn-danger';
         deleteBtn.textContent = '🗑️';
+        deleteBtn.title = 'Supprimer';
         deleteBtn.onclick = async () => {
           if (confirm(`Supprimer le contrat ${contract.name} ?`)) {
             await deleteContract(contract.id);
             contracts = contracts.filter(c => c.id !== contract.id);
+            if (editingId === contract.id) resetFormUI();
             showToast('Contrat supprimé', 'warning');
             renderAll();
           }
@@ -1710,6 +1846,7 @@
 
         actions.appendChild(badge);
         actions.appendChild(amount);
+        actions.appendChild(editBtn);
         actions.appendChild(deleteBtn);
 
         div.appendChild(content);
@@ -1751,9 +1888,9 @@
           <div class="kpi"><div class="kpi-label">Total contrats</div><div class="kpi-value">${stats.total}</div></div>
           <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
           <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
-          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
-          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
-          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div><div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Énergie</div><div class="kpi-value">${formatEuro(stats.energyAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ IAG</div><div class="kpi-value">${formatEuro(stats.iagAmount)}</div><div class="kpi-sub">Tarif: ${formatEuro(getIAGTarif(stats.iag))}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Total</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div></div>
         `;
 
         dayNote.textContent = `Date analysée : ${formatDate(date)}`;
@@ -1783,9 +1920,9 @@
           <div class="kpi"><div class="kpi-label">Total contrats</div><div class="kpi-value">${stats.total}</div></div>
           <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
           <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
-          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
-          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
-          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div><div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Énergie</div><div class="kpi-value">${formatEuro(stats.energyAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ IAG</div><div class="kpi-value">${formatEuro(stats.iagAmount)}</div><div class="kpi-sub">Tarif: ${formatEuro(getIAGTarif(stats.iag))}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Total</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div></div>
         `;
 
         weekStats.innerHTML = '';
@@ -1824,10 +1961,10 @@
           <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
           <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
           <div class="kpi"><div class="kpi-label">% IAG</div><div class="kpi-value">${stats.total > 0 ? ((stats.iag / stats.total)*100).toFixed(1):0}%</div></div>
-          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
-          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Énergie</div><div class="kpi-value">${formatEuro(stats.energyAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ IAG</div><div class="kpi-value">${formatEuro(stats.iagAmount)}</div><div class="kpi-sub">Tarif: ${formatEuro(getIAGTarif(stats.iag))}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Total</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div></div>
           <div class="kpi"><div class="kpi-label">Tarif IAG</div><div class="kpi-value">${formatEuro(getIAGTarif(stats.iag))}</div><div class="kpi-sub">Par IAG</div></div>
-          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div><div class="kpi-sub">IAG: ${formatEuro(stats.iagAmount)}</div></div>
         `;
 
         monthStats.innerHTML = '';
@@ -1864,9 +2001,9 @@
           <div class="kpi"><div class="kpi-label">Total contrats</div><div class="kpi-value">${stats.total}</div></div>
           <div class="kpi"><div class="kpi-label">Énergie</div><div class="kpi-value">${stats.energy}</div></div>
           <div class="kpi"><div class="kpi-label">IAG</div><div class="kpi-value">${stats.iag}</div></div>
-          <div class="kpi"><div class="kpi-label">Plenitude</div><div class="kpi-value">${stats.plenitude}</div></div>
-          <div class="kpi"><div class="kpi-label">Primeo</div><div class="kpi-value">${stats.primeo}</div></div>
-          <div class="kpi"><div class="kpi-label">Total €</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Énergie</div><div class="kpi-value">${formatEuro(stats.energyAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ IAG</div><div class="kpi-value">${formatEuro(stats.iagAmount)}</div></div>
+          <div class="kpi"><div class="kpi-label">€ Total</div><div class="kpi-value">${formatEuro(stats.totalAmount)}</div></div>
         `;
 
         const byDay = {};
@@ -1941,11 +2078,25 @@
         showToast('Export semaine généré', 'success');
       });
 
+      btnGenerateWeekCompact.addEventListener('click', () => {
+        const d = exportWeekDate.value || todayStr();
+        const text = buildWeekExportCompactText(d);
+        weekExportPreview.textContent = text;
+        showToast('Récap semaine généré', 'success');
+      });
+
       btnGenerateMonth.addEventListener('click', () => {
         const d = exportMonthDate.value || todayStr();
         const text = buildMonthExportText(d);
         monthExportPreview.textContent = text;
         showToast('Export mois généré', 'success');
+      });
+
+      btnGenerateMonthCompact.addEventListener('click', () => {
+        const d = exportMonthDate.value || todayStr();
+        const text = buildMonthExportCompactText(d);
+        monthExportPreview.textContent = text;
+        showToast('Récap mois généré', 'success');
       });
 
       btnCopyWeek.addEventListener('click', () => {
@@ -1959,6 +2110,18 @@
         if (!text.trim()) { showToast('Génère d\'abord un export mois', 'warning'); return; }
         copyToClipboard(text);
       });
+
+      function downloadText(filename, text, mime = 'text/plain') {
+        const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
 
       btnExportJSON.addEventListener('click', () => {
         const payload = {
@@ -2016,6 +2179,7 @@
             monthlyGoal.value = data.goal;
             localStorage.setItem(STORAGE_KEYS.goal, String(data.goal));
           }
+          resetFormUI();
           renderAll();
           showToast('Import JSON terminé', 'success');
         } catch (err) {
@@ -2027,6 +2191,7 @@
         if (!confirm('Tout effacer ? Cette action est irréversible.')) return;
         await clearAllContracts();
         contracts = [];
+        resetFormUI();
         renderAll();
         showToast('Toutes les données ont été effacées', 'warning');
       });
